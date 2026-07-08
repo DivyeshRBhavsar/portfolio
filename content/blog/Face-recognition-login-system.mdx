@@ -1,0 +1,128 @@
+---
+title: "Building a Face Recognition Login System: My 6-Month Journey Into Machine Learning"
+date: "2023-10-13"
+author: "Divyesh Bhavsar"
+tags: ["machine-learning", "computer-vision", "opencv", "python", "university-project"]
+excerpt: "How I built a facial-authentication login system as a university project — and what training a model on 100 face images taught me about how machine learning actually works."
+---
+
+# Building a Face Recognition Login System: My 6-Month Journey Into Machine Learning
+
+Six months. That's how long it took me to go from "I want to build something with machine learning" to a working desktop application that logs you in by scanning your face instead of typing a password. This was my university project, and it ended up teaching me more about how ML models actually learn than any lecture slide ever did.
+
+You can find the full code here: [Face-Recognition-login-system](https://github.com/DivyeshRBhavsar/Face-Recognition-login-system).
+
+In this post, I want to walk through how the system works, how I trained it on 100 images per user, and — more importantly — what the process taught me about training data, prediction, and the gap between "it works on my face" and "it works reliably."
+
+## The idea
+
+Passwords get forgotten, guessed, and phished. Your face doesn't. That was the pitch I gave myself when I picked this as my project. The goal was simple to state and hard to build: instead of (or alongside) a username and password, the system should recognize the registered user's face through a webcam and grant access only if it's confident that's really them.
+
+## The tech stack
+
+I built this entirely in Python, using:
+
+- **OpenCV (`cv2`)** — for all the computer vision work: capturing webcam frames, detecting faces, and training/running the recognizer
+- **Tkinter** — for the desktop GUI (login screen, registration screen, home screen)
+- **MySQL** — to store user credentials and security questions
+- **NumPy** — to convert face images into the array format OpenCV's recognizer expects
+
+## Step 1: Detecting a face with Haar Cascades
+
+Before a model can *recognize* anyone, it first has to find a face in the frame at all. That's where the `haarcascade_frontalface_default.xml` file comes in.
+
+A Haar Cascade is a classical computer vision technique (from the Viola-Jones algorithm) that scans an image for patterns of light and dark regions that tend to show up on faces — things like "the eye region is darker than the cheeks below it." It does this through a cascade of simple classifiers, rejecting non-face regions early so it can run fast enough for real-time video. OpenCV ships a version of this classifier pre-trained on thousands of faces, which is the XML file in my repo.
+
+In the code, this classifier is loaded once and reused everywhere I need to locate a face — both during registration and during login:
+
+```python
+face_classifier = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+faces = face_classifier.detectMultiScale(gray, 1.3, 5)
+```
+
+This step doesn't know *whose* face it is — only that there's a face-shaped region at these pixel coordinates. That distinction turned out to matter a lot for how I understood the rest of the pipeline.
+
+## Step 2: Collecting 100 images per user
+
+When someone registers, the app opens the webcam and starts capturing. Every time the Haar Cascade detects a face in a new frame, the app crops it, resizes it to 200x200, converts it to grayscale, and saves it — up to 100 images per user:
+
+```python
+if face_extractor(frame) is not None:
+    count += 1
+    face = cv2.resize(face_extractor(frame), (200, 200))
+    face = cv2.cvtColor(face, cv2.COLOR_BGR2GRAY)
+    file_name_path = 'D:/faces/' + value1 + '/' + fname_value1 + '.' + str(row2[0]) + '.' + str(count) + '.jpg'
+    cv2.imwrite(file_name_path, face)
+    ...
+    if cv2.waitKey(1) == 13 or count == 100:
+        break
+```
+
+This was my first real hands-on lesson in what "training data" actually means in ML. It's not an abstract concept — it's a folder full of slightly different photos of your own face, captured over a minute or two of blinking, turning your head, and shifting in your chair. The model would only ever be as good as the variety captured in that minute.
+
+## Step 3: Training the model — and why there's a YAML file involved
+
+This is the part that made "machine learning" click for me. Once the 100 images exist, the app trains an **LBPH (Local Binary Patterns Histograms) Face Recognizer** — a classical face-recognition algorithm that works by dividing each face image into small regions, computing a texture pattern (a "histogram") for each region, and combining them into a signature that represents that person's face.
+
+```python
+recognizer = cv2.face.LBPHFaceRecognizer_create()
+cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+
+for paths in imagePath:
+    img = Image.open(paths).convert('L')
+    imgArr = np.array(img, 'uint8')
+    faceId = int(os.path.split(paths)[-1].split('.')[1])
+    face = cascade.detectMultiScale(imgArr)
+    for (x, y, w, h) in face:
+        faceArr.append(imgArr[y:y + h, x:x + w])
+        ids.append(faceId)
+
+recognizer.train(faceArr, np.array(ids))
+recognizer.save('TrainingData/trainner.yml')
+```
+
+Here's the detail I want to be precise about, since it's easy to blur: **the Haar Cascade XML file and the trained model are two different files, in two different formats, doing two different jobs.**
+
+- `haarcascade_frontalface_default.xml` — a pre-trained, general-purpose *face detector*. It never changes and isn't specific to any user.
+- `trainner.yml` — the model I actually train, myself, on my own 100 images. `recognizer.save()` writes it out in YAML format, and it encodes the facial signatures tied to each user's numeric ID.
+
+So "training the model" really meant: feed it cropped face arrays plus a matching ID number for each one, and let `recognizer.train()` learn the mapping between facial texture patterns and identity. The output is that YAML file — genuinely the artifact of the learning process, not just a pretrained asset I downloaded.
+
+## Step 4: Predicting at login time
+
+When you try to log in, the app reloads that trained YAML model, opens the webcam, detects your face with the same Haar Cascade, and asks the recognizer to predict who it's looking at:
+
+```python
+recognizer.read("TrainingData/trainner.yml")
+faceId, percentage = recognizer.predict(gray[y:y + h, x:x + w])
+
+if percentage < 65:
+    # confident match — grant access
+    ...
+elif percentage > 85:
+    # not confident — treat as unknown, log the face for review
+    ...
+```
+
+`predict()` doesn't just return a name — it returns a confidence value based on how close the input face's pattern is to what the model learned during training. That confidence score is the whole game. Set the threshold too loose and strangers get in; set it too tight and the legitimate user gets rejected because of a shadow or a new haircut. Tuning those numbers was less about coding and more about testing, failing, and adjusting — which is a very ML-flavored kind of debugging.
+
+Unrecognized faces get saved to an `UnknownFaces` folder for reference, and according to my testing, the recognizer held up to roughly 96% accuracy under normal lighting conditions.
+
+## What this taught me about machine learning in general
+
+Going in, I understood "train a model" as a phrase from a textbook. Coming out the other side, six months later, here's what actually stuck:
+
+- **Detection and recognition are different problems.** Finding *a* face and identifying *whose* face are two separate models solving two separate tasks — one generic and pretrained, one custom and trained by me.
+- **A model is only as good as the examples it sees.** 100 images sounds like a lot until you realize they were all captured in the same room, under the same light, in the same two minutes. The model was excellent at recognizing "me, right now, in this lighting" — and noticeably shakier the moment any of those conditions changed.
+- **Prediction is a probability, not a fact.** Every prediction came with a confidence score, and the real engineering work was deciding what to *do* with that number — where to draw the line between "accept," "reject," and "not sure, log it and move on."
+- **Small, classical models are a great place to actually understand the pipeline.** Because LBPH is simpler than a deep neural network, I could reason about *why* it made a given prediction, which made it a genuinely good teaching tool before I moved on to anything deep-learning-based.
+
+## Honest limitations
+
+In the interest of not overselling this: it's a university project, and it has the rough edges you'd expect. The database credentials are hardcoded in the script rather than pulled from environment variables, passwords are stored in plain text rather than hashed, and the face storage path is a hardcoded local directory rather than something portable. None of that was the point of the assignment — the point was the ML pipeline — but if I were to harden this into something production-worthy, those would be the first three things I'd fix, followed by swapping LBPH for an embedding-based deep learning approach that generalizes better across lighting and angle changes.
+
+## Wrapping up
+
+This project didn't just teach me OpenCV syntax — it gave me a mental model for the detect → collect data → train → predict loop that shows up in some form in almost every ML system I've touched since, including the classification and prediction projects I've built afterward. Sometimes the best way to actually understand a concept is to build the small, slightly rough version of it yourself.
+
+If you want to poke around the code, it's all here: [github.com/DivyeshRBhavsar/Face-Recognition-login-system](https://github.com/DivyeshRBhavsar/Face-Recognition-login-system).

@@ -1,0 +1,71 @@
+---
+title: "My First Kaggle Competition: Spaceship Titanic and Finishing 421 out of 2,044"
+date: "2025-05-18"
+author: "Divyesh Bhavsar"
+tags: ["machine-learning", "kaggle", "catboost", "feature-engineering", "python"]
+excerpt: "Notes from my first Kaggle competition — predicting which passengers got transported to another dimension, and how feature engineering and CatBoost got me to a top-21% finish."
+---
+
+# My First Kaggle Competition: Spaceship Titanic
+
+Every data scientist has a "first competition" story, and this is mine. [Spaceship Titanic](https://github.com/DivyeshRBhavsar/Spaceship_titanic) is Kaggle's playful sci-fi remix of the classic Titanic dataset: instead of predicting who survived a shipwreck, you're predicting whether a passenger got transported to an alternate dimension after a spaceship collision. Same shape of problem, different flavor of chaos.
+
+My last submission landed on **May 18, 2026**, and I finished **421st out of 2,044** entrants with a score of **0.80851**. It's not a leaderboard-topping result, but it's an honest one, and it taught me more about the actual mechanics of a Kaggle-style ML workflow than any single tutorial had up to that point.
+
+## The problem
+
+The dataset follows passengers aboard a fictional spaceship, and the target variable is simple to state and genuinely tricky to predict well: `Transported` — `True` or `False`. Underneath that simplicity is a dataset full of missing values, mixed categorical/numeric features, and structure hidden inside fields that look like plain identifiers at first glance.
+
+## Cleaning the data was half the battle
+
+Before any modeling happened, a lot of the real work was in preprocessing:
+
+- **Group-based imputation** — passengers travel in groups (encoded in `PassengerId`), so missing values for one passenger could often be inferred from others in the same group rather than filled with a generic default.
+- **Mode/median filling** for the remaining gaps, chosen per feature rather than blanket-applied.
+- Cleaning and transforming categorical fields so they were actually usable by the models downstream.
+
+## Feature engineering did more than the models did
+
+This project reinforced something I'd read about but hadn't *felt* yet: clever features often move the needle more than a fancier model does. The features that ended up mattering most:
+
+- **`Group`**, extracted directly out of `PassengerId` — since group membership turned out to be meaningfully predictive on its own.
+- **Spending-related features** — total spend across onboard services, plus flags for passengers who spent nothing at all.
+- **CryoSleep transformations** — passengers in cryosleep behaved very differently from those who weren't, and that distinction needed to be captured explicitly, not left for the model to infer.
+- **Deck and Cabin decomposition** — splitting the `Cabin` field into its component parts (deck, number, side) instead of treating it as one opaque string.
+
+The exploratory analysis backed this up directly: passengers in CryoSleep were noticeably more likely to have been transported, and spending behavior (or the complete lack of it) showed a clear relationship with the outcome. Neither of those signals would have been usable if I'd left the raw fields untouched.
+
+## Trying models, in order of "let's see"
+
+I worked through models roughly in order of increasing complexity, which turned out to be a good way to build intuition about what the data actually needed:
+
+1. **Logistic Regression** — a fast baseline to sanity-check the pipeline
+2. **Random Forest** — a jump in accuracy, and my first real signal that non-linear interactions between features mattered
+3. **Gradient Boosting** — incremental improvement over the forest
+4. **XGBoost** — a further step up, and a good push toward learning how boosting hyperparameters actually behave
+5. **CatBoost** — the eventual winner, tuned with an **Optuna** hyperparameter search
+
+CatBoost's native handling of categorical features (rather than requiring manual encoding for everything) turned out to be a meaningful advantage on this dataset, given how many categorical fields — `HomePlanet`, `Destination`, `Deck`, `Side` — were doing real work.
+
+## Where it landed
+
+The tuned CatBoost model, after the Optuna search, settled around **80.8% accuracy** in my own validation — which lines up closely with the **0.80851** score the leaderboard gave my final submission. Landing at **421 out of 2,044** put me in roughly the top 21% of entrants for a first competition, which I'm genuinely happy with, while also being clear-eyed that there's real room to climb from here.
+
+## What a first competition actually teaches you
+
+Tutorials teach you the syntax. A competition teaches you the judgment calls:
+
+- **Your local validation score and your leaderboard score are two different numbers, and both matter.** Watching them stay close was reassuring; it meant I wasn't just overfitting to my own validation split.
+- **Feature engineering has diminishing-but-real returns.** Each engineered feature (Group, spending flags, cabin decomposition) added a bit more signal — none of them alone was a silver bullet, but together they mattered more than swapping models did.
+- **Trying models in sequence builds intuition, not just accuracy.** Watching the score move (or not move) from Logistic Regression through to CatBoost taught me *why* certain models suit certain kinds of structure, instead of just being told which one "wins."
+- **Hyperparameter tuning is its own skill.** Using Optuna to search CatBoost's parameter space, rather than hand-picking values, was the first time tuning felt like a systematic process instead of guesswork.
+
+## Honest limitations
+
+I'm not going to pretend this is a finished project. As it stands, accuracy can still be improved, there's more feature engineering headroom (interaction terms, more targeted group-level aggregates), and the hyperparameter search wasn't pushed to its full extent given time constraints. Those are the exact three things I'd tackle first if I revisit this.
+
+## Wrapping up
+
+Finishing in the top 21% of my first Kaggle competition isn't a result I'd put on a trophy shelf, but it's a genuinely solid marker for a first attempt, and it gave me a much more concrete feel for what a real ML workflow looks like end to end — messy data, engineered features, a sequence of models, and a tuned final choice, all checked against a leaderboard that doesn't care about your intentions, only your predictions.
+
+Full notebooks and code are here: [github.com/DivyeshRBhavsar/Spaceship_titanic](https://github.com/DivyeshRBhavsar/Spaceship_titanic).

@@ -1,0 +1,114 @@
+---
+title: "Building a Secure Portal PDF Data Extraction Pipeline: What Web Scraping and Data Engineering Actually Feel Like"
+date: "2024-02-25"
+author: "Divyesh Bhavsar"
+tags: ["data-engineering", "web-scraping", "python", "streamlit", "automation"]
+excerpt: "How I built a one-click tool to log into a secure client portal, pull PDF reports, and turn them into a clean, always-current table — and what it taught me about data engineering and web scraping without ever calling it either."
+---
+
+# Building a Secure Portal PDF Data Extraction Pipeline
+
+Not every project starts with a grand plan. This one started with a small, very personal annoyance: I had client policy details sitting behind a secure web portal, locked inside PDF reports, and every time I needed current numbers I was manually logging in, downloading files, opening them, and copying values into a spreadsheet by hand. It worked, but it didn't scale, and it was exactly the kind of repetitive task that's begging to be automated.
+
+So I built [Secure-Portal-PDF-Data-Extraction-System](https://github.com/DivyeshRBhavsar/Secure-Portal-PDF-Data-Extraction-System) — a small local tool that logs into the portal for me, downloads whatever reports are there, extracts the data into a clean table, and updates it all again with a single click.
+
+## The problem, stated plainly
+
+The portal held policy information I needed regularly, but every report only existed as a PDF. Manually pulling that data was slow and error-prone, and there was no single, reliable, always-current view of it. I wanted:
+
+- A one-click login to the portal
+- Automatic download of the PDF reports
+- Clean, structured data extracted from those PDFs
+- Everything organized without duplicate or inconsistent entries
+- A way to refresh the whole thing whenever I needed current numbers
+
+## How it's put together
+
+The interface is a small [Streamlit](https://streamlit.io/) app (`App.py`) — nothing fancy, just a page with a login button and two refresh buttons. Under the hood, it's really a thin front end over two backend pieces:
+
+- **`src.auth`** — handles the secure login to the portal
+- **`src.downloader`** — handles pulling the PDF reports and turning them into rows in a CSV
+
+The app calls both as subprocesses rather than importing them directly, which keeps the login/session logic and the extraction logic decoupled from the UI:
+
+```python
+if st.button("🔑 Login to Portal"):
+    subprocess.run([sys.executable, "-m", "src.auth"], cwd=PROJECT_ROOT)
+    st.success("✅ Login completed.")
+```
+
+Everything the tool produces lands in two predictable places:
+
+```python
+PDF_DIR = os.path.join(PROJECT_ROOT, "output", "pdfs")
+CSV_FILE = os.path.join(PROJECT_ROOT, "output", "data", "policies.csv")
+```
+
+So at any point, `output/pdfs` holds the raw source documents and `output/data/policies.csv` holds the clean, structured view of them — one file I can open, sort, and hand off to whatever analysis or dashboard I want, instead of digging through individual PDFs.
+
+## The refresh button is really two different operations
+
+This is the detail I ended up caring about most, because it's the difference between a toy script and something you can actually trust to keep running:
+
+```python
+if st.button("🔄 Refresh New Policies"):
+    clear_output_folders()
+    result, duration = run_downloader(force_refresh=False)
+```
+
+```python
+if st.button("♻️ Re-Check All Policies"):
+    clear_output_folders()
+    result, duration = run_downloader(force_refresh=True)
+```
+
+**Refresh New Policies** does an incremental pass — go check the portal, pull anything new, and skip what's already accounted for. **Re-Check All Policies** forces a full re-download and re-extraction of everything, which is what I reach for if I suspect something upstream changed or the incremental pass missed something. Before either one runs, `clear_output_folders()` wipes the existing CSV and PDFs so I never end up with stale files quietly sitting alongside fresh ones — a small thing, but it's the difference between "the data is current" and "the data is *probably* current."
+
+The app also handles the one failure mode I hit constantly during testing: an expired portal session.
+
+```python
+if "Session expired" in result.stderr:
+    st.warning("⚠️ Session expired. Please click 'Re-Login to Portal'.")
+```
+
+Instead of the whole thing silently failing or throwing a stack trace at me, it tells me exactly what to click next.
+
+## Why I'd call this "data engineering and web scraping," even though it doesn't look like a scraper
+
+When people say "web scraping," they usually picture pulling data out of public HTML pages. This project doesn't touch HTML at all — but the underlying problem is the same shape: **automate something a human would otherwise do by clicking around in a browser**, and do it reliably, repeatedly, without a person babysitting it. Instead of parsing a webpage's DOM, I'm authenticating into a session-based portal and pulling documents out of it programmatically. Same instinct, different surface.
+
+And once those PDFs land locally, what happens next is a small but genuine ETL pipeline:
+
+- **Extract** — pull the PDFs out of the secure portal
+- **Transform** — parse the tabular data buried inside each report and normalize it into consistent rows and columns
+- **Load** — write the result into a single, deduplicated CSV that reflects the current state of things
+
+That's the "data engineering, indirectly" part. I didn't set out to learn ETL design — I set out to stop copy-pasting numbers by hand — but building this forced me to think about the things every real data pipeline has to deal with: what happens on a partial failure, how do you avoid duplicate or inconsistent records, how do you know when a re-run should touch everything versus just what's new.
+
+## Making it something I could trust, not just something that worked once
+
+A few choices in the repo exist specifically because "runs once on my laptop" isn't the same bar as "I can rely on this every week":
+
+- **Docker** — the project ships with a `Dockerfile`, so the whole pipeline runs in a consistent environment regardless of what's installed locally.
+- **Automated tests** — there's a `tests` directory and a `pytest.ini`, so the extraction logic has some guardrails against silently breaking.
+- **CI on every change** — a GitHub Actions workflow runs the test suite automatically, which caught more than one regression before it became a "why is my CSV empty" afternoon.
+- **A downloadable archive** — the app can zip the entire `output` folder (PDFs and CSV together) into one download, timestamped, for whenever I want a snapshot rather than just the live table.
+
+## What I actually learned
+
+Framed honestly, the biggest lessons weren't about PDF parsing syntax:
+
+- **"Refresh" is a design decision, not a button label.** Deciding what counts as incremental versus a full re-check, and what state needs to be cleared before either one runs, is most of the actual engineering.
+- **Automating a login is not the same as automating a scrape.** Session handling and failure states (like an expired login) need to be first-class citizens in the design, not an afterthought you patch in later.
+- **A clean table is the actual deliverable.** The PDFs are just the raw material. The CSV — deduplicated, consistent, always current — is what makes the data actually usable for anything downstream, whether that's a chart, a filter, or a quick lookup.
+- **Small reliability habits compound.** Clearing old output before writing new output, surfacing a clear error instead of a stack trace, having tests that run automatically — none of these are exciting on their own, but together they're the difference between a script and a tool.
+
+## Fair caveats
+
+This was built for my own workflow, not as a general-purpose product, so it's worth being upfront: it assumes a specific portal and report format, the sample data in the repo is anonymized for obvious reasons, and it's designed to run locally rather than as a shared, multi-user service. If I extended this further, the natural next steps would be parameterizing it for other portals, and adding proper credential management instead of relying on local environment setup.
+
+## Wrapping up
+
+This project didn't start as an exercise in "learn ETL" or "learn web scraping" — it started as me wanting to stop doing something tedious by hand. But building the thing that removes tedium tends to quietly teach you the underlying discipline anyway. That's been true of this project, and it's a pattern I've noticed shows up in most of the automation work I enjoy building.
+
+Code's here if you want to look: [github.com/DivyeshRBhavsar/Secure-Portal-PDF-Data-Extraction-System](https://github.com/DivyeshRBhavsar/Secure-Portal-PDF-Data-Extraction-System).

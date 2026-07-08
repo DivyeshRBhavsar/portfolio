@@ -1,0 +1,60 @@
+---
+title: "A Two-Layer Model for Term Deposit Prediction (Work in Progress)"
+date: "Not completed yet"
+author: "Divyesh Bhavsar"
+tags: ["machine-learning", "catboost", "banking", "term-deposit", "work-in-progress"]
+excerpt: "My second applied ML project: a two-layer model designed to predict which bank customers are most likely to say yes to a term deposit — still in progress, and I want to document the thinking so far rather than wait for a tidy ending."
+---
+
+# A Two-Layer Model for Term Deposit Prediction (Work in Progress)
+
+This is my second project in this line of applied ML work, and — unlike the others I've written about — it isn't finished. I want to document it anyway, because the reasoning behind the design is worth writing down while it's fresh, even if the final numbers aren't ready yet. You can follow along in the repo: [5qaNUcRSLjHZ5anY](https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY) — "When the customers are most likely to be said yes for Term Deposits."
+
+## The business question
+
+A bank runs outbound marketing campaigns offering customers a term deposit product, and the question is simple to state: **which customers are actually likely to say yes?** Every call that goes to a customer who was never going to subscribe is wasted time and a bit of goodwill spent for nothing. The goal isn't just "predict yes or no" in the abstract — it's to make the calling campaign itself more efficient.
+
+## Why two layers instead of one
+
+The single-model approach felt wrong for this problem almost as soon as I started thinking about it, because the question isn't really one question — it's two, asked in sequence:
+
+**Layer 1 — is this call worth making at all?**
+The first layer's job is to filter out the calls that are very unlikely to convert, so effort doesn't get spent chasing customers who were never in play. This layer is deliberately tuned to tolerate a small amount of lost opportunity — accepting roughly a 3% loss of true subscribers — in exchange for meaningfully cutting down the number of low-probability calls. That's a real trade-off, not a free win, and it's one I made consciously rather than by accident of a default threshold.
+
+**Layer 2 — of the calls worth making, which ones convert, and when?**
+Once the obvious no's are filtered out, the second layer works with what's left and leans on campaign-level context rather than just customer demographics — things like how many times a customer has already been contacted in this campaign, and the month or day of the last call. That timing detail matters more than it sounds: a customer who's been called five times already behaves very differently from one on their first call, and the calendar itself carries a seasonal signal in how likely people are to convert.
+
+## Feature engineering around fatigue and timing
+
+A good chunk of the current feature work is built around two ideas that don't show up as raw columns in the original dataset:
+
+- **Customer fatigue** — repeated contact attempts aren't neutral. The more times someone's been called, the more that history needs to be reflected as its own signal, not just as a count.
+- **Seasonal conversion dynamics** — when in the year (and even where in the week) a call happens correlates with how likely it is to land, and that's the kind of pattern that's easy to miss if you only look at customer-level attributes.
+
+## Why CatBoost
+
+Both layers lean on CatBoost, mainly because this dataset is thick with categorical fields — job type, education, month of contact, outcome of the previous campaign, and more. CatBoost's native handling of categorical features means I'm not stuck manually one-hot encoding a dozen high-cardinality columns and hoping the resulting dimensionality doesn't work against me. That decision carried over directly from lessons in an earlier project, where CatBoost's categorical handling turned out to matter more than expected.
+
+## Where things stand right now
+
+To be upfront: this project is **not finished**, and I don't want to report tidy final numbers that don't exist yet. What exists so far:
+
+- `Term_Deposit_EDA.ipynb` — exploratory work on the raw campaign data
+- `First_Layer_Modelling.ipynb` — the filtering layer, tuned around that ~3% tolerated loss of true subscribers
+- `Second_Layer_Modelling.ipynb` — the refinement layer using campaign-level and timing features
+
+What's still ahead: tightening the handoff between the two layers, validating that the fatigue and seasonality features are actually earning their place rather than adding noise, and running a proper evaluation of the combined two-layer pipeline rather than each layer in isolation.
+
+## What I'm learning mid-project
+
+Even without a finished result, a few things have already stuck:
+
+- **A two-stage funnel forces you to be honest about trade-offs early.** Deciding to tolerate a 3% loss of true subscribers at Layer 1 wasn't a metric I backed into — it was a deliberate choice I had to justify before writing any code for Layer 2.
+- **Not every useful signal is a column in the raw data.** Fatigue and seasonality aren't fields you can select — they're patterns you have to construct deliberately from fields that look mundane on their own (contact count, contact date).
+- **It's fine to document unfinished work.** I'd rather be honest that this is mid-flight than backfill a clean-sounding conclusion that isn't actually true yet.
+
+## Wrapping up (for now)
+
+I'll come back and update this once the two layers are properly validated together and I have real numbers to stand behind. Until then, this is where the project sits: a reasoned architecture, a clear trade-off at the filtering stage, and feature engineering aimed at capturing fatigue and timing — with the actual results still ahead of me.
+
+Repo, as it stands today: [github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY](https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY).

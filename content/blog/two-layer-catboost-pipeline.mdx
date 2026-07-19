@@ -1,60 +1,88 @@
 ---
-title: "A Two-Layer Model for Term Deposit Prediction (Work in Progress)"
-date: "Not completed yet"
-author: "Divyesh Bhavsar"
-tags: ["machine-learning", "catboost", "banking", "term-deposit", "work-in-progress"]
-excerpt: "My second applied ML project: a two-layer model designed to predict which bank customers are most likely to say yes to a term deposit — still in progress, and I want to document the thinking so far rather than wait for a tidy ending."
+title: "Building a Two-Layer Calling Model: From Raw Data to a Live Dashboard"
+description: "A two-stage ML funnel (Logistic Regression + CatBoost, then XGBoost) that filters 40,000 customers down to a high-confidence call list, with a Power BI dashboard translating the results for both technical and non-technical stakeholders."
+date: "2026-07-19"
+tags: ["machine-learning", "data-science", "power-bi", "python", "xgboost", "catboost"]
+repo: "https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY"
 ---
 
-# A Two-Layer Model for Term Deposit Prediction (Work in Progress)
+## The problem
 
-This is my second project in this line of applied ML work, and — unlike the others I've written about — it isn't finished. I want to document it anyway, because the reasoning behind the design is worth writing down while it's fresh, even if the final numbers aren't ready yet. You can follow along in the repo: [5qaNUcRSLjHZ5anY](https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY) — "When the customers are most likely to be said yes for Term Deposits."
+A bank marketing team has 40,000 customers and a term deposit product to sell. Calling everyone wastes time on people who were never going to say yes. Calling too few misses real subscribers. The question isn't "can a model predict who'll say yes" — it's "how do we build a *system* that a calling team can actually trust and act on, every day, with full visibility into what it's getting right and wrong."
 
-## The business question
+That's what this project became: not just a model, but a two-stage decision funnel with an interactive dashboard sitting on top of it, built so a non-technical stakeholder and a technical reviewer could both look at the same page and understand exactly what's happening.
 
-A bank runs outbound marketing campaigns offering customers a term deposit product, and the question is simple to state: **which customers are actually likely to say yes?** Every call that goes to a customer who was never going to subscribe is wasted time and a bit of goodwill spent for nothing. The goal isn't just "predict yes or no" in the abstract — it's to make the calling campaign itself more efficient.
+**Code:** [github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY](https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY)
 
-## Why two layers instead of one
+## The data
 
-The single-model approach felt wrong for this problem almost as soon as I started thinking about it, because the question isn't really one question — it's two, asked in sequence:
+The dataset: 40,000 rows from a term deposit marketing campaign, with the classic bank-marketing feature set — demographics (age, marital status, job, education, housing, loan), campaign details (contact channel, month, day, campaign count), and the outcome we care about, whether the customer said yes.
 
-**Layer 1 — is this call worth making at all?**
-The first layer's job is to filter out the calls that are very unlikely to convert, so effort doesn't get spent chasing customers who were never in play. This layer is deliberately tuned to tolerate a small amount of lost opportunity — accepting roughly a 3% loss of true subscribers — in exchange for meaningfully cutting down the number of low-probability calls. That's a real trade-off, not a free win, and it's one I made consciously rather than by accident of a default threshold.
+One deliberate design choice shaped everything downstream: **call duration is only known after a call happens.** You can't use it to decide whether to make the call in the first place — that would be leakage, using information from the future to justify a decision in the present. So the two layers of the model were built around a simple rule: Layer 1 can only use information available *before* any contact. Layer 2 can use more, because by the time it runs, some contact history already exists.
 
-**Layer 2 — of the calls worth making, which ones convert, and when?**
-Once the obvious no's are filtered out, the second layer works with what's left and leans on campaign-level context rather than just customer demographics — things like how many times a customer has already been contacted in this campaign, and the month or day of the last call. That timing detail matters more than it sounds: a customer who's been called five times already behaves very differently from one on their first call, and the calendar itself carries a seasonal signal in how likely people are to convert.
+## Layer 1: cheap, fast, cast a wide net
 
-## Feature engineering around fatigue and timing
+Layer 1 is a stacked ensemble — Logistic Regression and CatBoost, blended by a meta-learner trained on out-of-fold predictions to avoid leakage between the base models and the stack. It uses only seven pre-contact features: day, month, contact channel, age, marital status, balance, and housing status.
 
-A good chunk of the current feature work is built around two ideas that don't show up as raw columns in the original dataset:
+Validated across 5-fold cross-validation with consistent AUCs in every fold (no wild swings between splits — a basic but important check that the model isn't just fitting to a lucky train/test split), the final stack achieved:
 
-- **Customer fatigue** — repeated contact attempts aren't neutral. The more times someone's been called, the more that history needs to be reflected as its own signal, not just as a count.
-- **Seasonal conversion dynamics** — when in the year (and even where in the week) a call happens correlates with how likely it is to land, and that's the kind of pattern that's easy to miss if you only look at customer-level attributes.
+- **96.1% recall on true "yes" customers** — of everyone who would have said yes, the model correctly flagged 96 out of every 100.
+- **9,110 true "no"s correctly filtered out**, with only **113 real subscribers missed** in the process.
+- **9.0% precision** — meaning roughly 1 in 11 people flagged actually converts. Low, but expected: the base conversion rate in this dataset is under 10%, so any model prioritizing recall over precision will look like this. That trade-off is inherent to the class imbalance, not a modeling mistake, and the dashboard says so explicitly rather than hiding behind the headline recall number.
 
-## Why CatBoost
+One honest finding worth naming directly: the original target was 80% yes-recall **and** 50% no-recall simultaneously. Scanning every decision threshold from 0.05 to 0.79 showed those two floors were never jointly achievable — once no-recall climbs past 50%, yes-recall has already dropped well below 80%. The threshold that got selected (0.30) is the best available compromise, not a target that was actually hit. Rather than quietly picking a number and moving on, the dashboard surfaces this trade-off directly, with the full precision/recall curve plotted against the chosen threshold so anyone can see exactly where the compromise sits.
 
-Both layers lean on CatBoost, mainly because this dataset is thick with categorical fields — job type, education, month of contact, outcome of the previous campaign, and more. CatBoost's native handling of categorical features means I'm not stuck manually one-hot encoding a dozen high-cardinality columns and hoping the resulting dimensionality doesn't work against me. That decision carried over directly from lessons in an earlier project, where CatBoost's categorical handling turned out to matter more than expected.
+## Layer 2: now that we know more, refine again
 
-## Where things stand right now
+The 30,777 customers Layer 1 flagged for calling move into Layer 2 — an XGBoost model that now has access to features that weren't available (or weren't fair to use) at the first screening stage: job, education, loan status, campaign contact count, and call duration from earlier contact history.
 
-To be upfront: this project is **not finished**, and I don't want to report tidy final numbers that don't exist yet. What exists so far:
+Validated the same way as Layer 1 — 5-fold cross-validation, checked for stability before trusting the result — Layer 2 produced a CV AUC of 0.9405 ± 0.0034, a tight enough spread across folds to rule out the model getting lucky on any single split, with a held-out test AUC of 0.9414.
 
-- `Term_Deposit_EDA.ipynb` — exploratory work on the raw campaign data
-- `First_Layer_Modelling.ipynb` — the filtering layer, tuned around that ~3% tolerated loss of true subscribers
-- `Second_Layer_Modelling.ipynb` — the refinement layer using campaign-level and timing features
+At the auto-selected threshold (0.28, chosen to maximize yes-recall while keeping precision above a 30% floor), the model hit 96.2% yes-recall and 30.4% yes-precision on the test set, correctly eliminating 78.0% of the true "no" customers remaining in the pool while missing only 21 of 557 real subscribers. Applied to the full Layer 1 pool, Layer 2 narrowed 30,777 leads down to a final call list of 8,589 — with yes-recall holding at 97.8% and precision improving to 31.7%. That's a more than 3x concentration of real subscribers compared to Layer 1's output, achieved without meaningfully sacrificing recall on the customers who matter.
 
-What's still ahead: tightening the handoff between the two layers, validating that the fatigue and seasonality features are actually earning their place rather than adding noise, and running a proper evaluation of the combined two-layer pipeline rather than each layer in isolation.
+Feature importance from Layer 2 also surfaced something worth calling out: `duration` was the single most predictive feature in the entire model (importance 0.138), with campaign-timing signals close behind. That's a clean illustration of *why* the two-layer design exists: some signal genuinely only becomes available after initial contact, and the architecture is built to take advantage of it without leaking it backward into the first decision.
 
-## What I'm learning mid-project
+## What's next: not every "yes" is equal
 
-Even without a finished result, a few things have already stuck:
+Once Layer 2 produces its final 8,589-person call list, there's still a meaningful question left: who on that list should get called first? I ran UMAP dimensionality reduction followed by Ward-linkage hierarchical clustering on the final pool, scanning cluster counts from k=2 to k=10 and selecting by silhouette score. The score climbed steadily with more clusters (0.418 at k=2, up to 0.699 at k=10) — worth flagging honestly, the best score sat right at the edge of the tested range, meaning 10 isn't a confirmed final answer. A wider scan (k up to 15–20) would be the natural next step before treating this segmentation as locked in.
 
-- **A two-stage funnel forces you to be honest about trade-offs early.** Deciding to tolerate a 3% loss of true subscribers at Layer 1 wasn't a metric I backed into — it was a deliberate choice I had to justify before writing any code for Layer 2.
-- **Not every useful signal is a column in the raw data.** Fatigue and seasonality aren't fields you can select — they're patterns you have to construct deliberately from fields that look mundane on their own (contact count, contact date).
-- **It's fine to document unfinished work.** I'd rather be honest that this is mid-flight than backfill a clean-sounding conclusion that isn't actually true yet.
+With that caveat on the table, the 10 segments show real, usable spread — conversion rates range from 26.9% to 42.9% against a pool-wide average of 31.7%:
 
-## Wrapping up (for now)
+- **Cluster 2 (515 customers, 42.9% conversion)** — the standout segment: divorced management professionals, mid-40s, contacted by cellular in March. Nearly 1.4x the pool average and roughly 4.8x the original raw baseline.
+- **Cluster 0 (834 customers, 37.2%)** — retired customers, married, the oldest average age in the pool and the highest balance among the top-performing segments, reached via telephone in June.
+- **Cluster 6 (1,118 customers, 34.1%)** — married management professionals with tertiary education and the highest average balance of any segment, contacted in August.
+- **Cluster 1 (1,728 customers, 26.9%)** — the largest segment in the entire pool, and the weakest performer: blue-collar, married, housing loan holders, contacted in May. Nearly a fifth of the entire call list sits in this lowest-converting group.
+- **Cluster 8 (114 customers, 40.4%)** — a small segment currently in default with a negative average balance, still converting well above the pool average — flagged as statistically unreliable given its size, worth watching rather than acting on directly.
 
-I'll come back and update this once the two layers are properly validated together and I have real numbers to stand behind. Until then, this is where the project sits: a reasoned architecture, a clear trade-off at the filtering stage, and feature engineering aimed at capturing fatigue and timing — with the actual results still ahead of me.
+In practical terms, this turns "call everyone on this list" into "call this segment first." Sequencing outreach toward Clusters 2, 0, and 6 — mid-career and retired professionals, typically reached via cellular outside of May — ahead of Cluster 1's large blue-collar May cohort could meaningfully lift effective conversion rate within a fixed calling capacity, with zero additional model training required. It's a prioritization layer sitting on top of an already-strong list, not a replacement for the model that built it.
 
-Repo, as it stands today: [github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY](https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY).
+## Translating the model into something a stakeholder can use
+
+A confusion matrix means nothing to most business stakeholders. So instead of TP/FP/TN/FN, the dashboard reframes every outcome in plain language:
+
+- **Correctly Called** — real subscribers correctly identified
+- **Called, But Said No** — the cost of casting a wide net
+- **Correctly Skipped** — time saved, accurately
+- **Missed a Real Customer** — the honest cost of filtering aggressively
+
+Each is color-coded (green for right, amber for wrong) and paired with a one-line plain-English summary auto-generated from the underlying numbers, so the takeaway updates live as the model or data changes — no one has to manually rewrite a slide every time the numbers shift.
+
+## Quantifying the payoff — and its cost
+
+The dashboard converts eliminated-call counts into real time saved, using the dataset's actual average call duration rather than an assumed number — translated into hours, work-days, and work-weeks so the impact is legible to someone who's never looked at a confusion matrix. A companion view shows the flip side directly alongside it: the real subscribers missed at each layer, framed explicitly as the price paid for that efficiency. Benefit and cost, side by side, on purpose — not just a savings number in isolation.
+
+A separate page tracks class balance across the funnel: the proportion of true "yes" customers climbs from the raw dataset's baseline, through Layer 1's pool, through Layer 2's pool — visible proof that each stage is doing its job of concentrating the pool toward real subscribers, paired with the demographic profile of exactly who gets filtered out along the way, as a basic fairness check.
+
+## What I'd tell another data scientist
+
+The modeling here isn't exotic — stacked linear/boosted models and a gradient booster, nothing state-of-the-art. What made this project worth writing up is the discipline around three things:
+
+1. **No leakage, structurally enforced.** Duration and campaign count aren't excluded from Layer 1 as an afterthought — they're excluded because the architecture makes it impossible to use information that wouldn't exist yet in a live deployment.
+2. **Surfacing trade-offs instead of hiding them.** The threshold floors weren't jointly achievable, and the dashboard says that in plain text, with the curve to back it up, rather than presenting the chosen threshold as if it met a target it didn't.
+3. **Building for the audience that has to act on it.** A model's output is only useful if the person making calling decisions can understand what it's telling them — which is why the confusion matrix became a plain-language card grid before it became a chart.
+
+---
+
+*The full interactive dashboard — including layer-by-layer drill-throughs, the threshold trade-off explorer, cross-validation stability charts, and the demographic fairness breakdown — is available on request. Built entirely in Power BI on top of a Python/scikit-learn/CatBoost/XGBoost modeling pipeline.*
+
+*Full code: [github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY](https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY)*

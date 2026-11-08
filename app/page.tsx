@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import TerminalHero from '@/components/TerminalHero';
 import Reveal from '@/components/Reveal';
+import WelcomeIntro from '@/components/character/WelcomeIntro';
 import { getAllPosts } from '@/lib/posts';
 
 const competencies = [
@@ -15,6 +16,7 @@ export default function HomePage() {
 
   return (
     <div className="max-w-5xl mx-auto px-6">
+      <WelcomeIntro />
       <section className="pt-16 sm:pt-24 pb-16 grid gap-10 sm:grid-cols-2 items-center">
         <div>
           <p className="font-mono text-sm text-teal-400 mb-3">Data Analyst · AI Resident @ Apziva</p>

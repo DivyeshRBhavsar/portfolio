@@ -1,6 +1,6 @@
 # Divyesh Bhavsar — Portfolio
 
-Next.js 14 (App Router) + TypeScript + Tailwind. Built with four dynamic features:
+Next.js 16 (App Router) + TypeScript + Tailwind. Built with four dynamic features:
 
 1. **Live GitHub project gallery** — `/projects` fetches your repos directly from the GitHub API
    at build/request time (`lib/github.ts`), so new repos show up automatically. Filterable by

@@ -9,15 +9,15 @@ export default async function ProjectsPage() {
 
   return (
     <div className="max-w-5xl mx-auto px-6 py-16">
-      <p className="font-mono text-sm text-teal-400 mb-2">/ projects</p>
-      <h1 className="font-display text-3xl font-bold text-ink-100 mb-3">Projects</h1>
-      <p className="text-ink-300 mb-10 max-w-2xl">
+      <p className="font-mono text-sm text-red-deep mb-2">/ projects</p>
+      <h1 className="font-display text-3xl font-bold text-ink mb-3">Projects</h1>
+      <p className="text-ink-muted mb-10 max-w-2xl">
         Pulled live from{' '}
         <a
           href="https://github.com/DivyeshRBhavsar"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-teal-400 hover:underline"
+          className="text-red-deep underline-offset-4 hover:underline"
         >
           github.com/DivyeshRBhavsar
         </a>

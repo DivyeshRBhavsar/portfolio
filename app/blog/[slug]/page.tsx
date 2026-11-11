@@ -13,16 +13,16 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
 
   return (
     <article className="max-w-3xl mx-auto px-6 py-16">
-      <p className="font-mono text-sm text-teal-400 mb-2">/ blog</p>
-      <h1 className="font-display text-3xl font-bold text-ink-100 mb-3">{post.meta.title}</h1>
-      <p className="font-mono text-xs text-ink-500 mb-10">
+      <p className="font-mono text-sm text-red-deep mb-2">/ blog</p>
+      <h1 className="font-display text-3xl font-bold text-ink mb-3">{post.meta.title}</h1>
+      <p className="font-mono text-xs text-ink-muted mb-10">
         {new Date(post.meta.date).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric',
         })}
       </p>
-      <div className="prose prose-invert prose-teal max-w-none prose-headings:font-display prose-a:text-teal-400">
+      <div className="prose prose-neutral max-w-none prose-headings:font-display prose-headings:text-ink prose-p:text-ink prose-li:text-ink prose-strong:text-ink prose-a:text-red-deep prose-th:text-ink prose-td:text-ink">
         <MDXRemote source={post.content} />
       </div>
     </article>

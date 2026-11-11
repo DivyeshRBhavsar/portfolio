@@ -10,6 +10,8 @@
 
 html {
   scroll-behavior: smooth;
+  /* Reserve the scrollbar's space so locking scroll during the intro doesn't shift the layout. */
+  scrollbar-gutter: stable;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -24,19 +26,18 @@ html {
 }
 
 body {
-  @apply bg-navy-900 text-ink-100 font-body;
-  background-image: radial-gradient(circle at 20% 0%, rgba(46, 191, 178, 0.08), transparent 45%);
+  @apply bg-cream text-ink font-body;
 }
 
 ::selection {
-  @apply bg-teal-600 text-navy-950;
+  @apply bg-sun text-ink;
 }
 
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid theme('colors.teal.400');
+  outline: 2px solid theme('colors.red.DEFAULT');
   outline-offset: 2px;
 }
 

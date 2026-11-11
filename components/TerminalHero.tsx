@@ -42,16 +42,16 @@ export default function TerminalHero() {
   }, [displayed, phase, index]);
 
   return (
-    <div className="rounded-lg border border-navy-700 bg-navy-950/60 shadow-2xl shadow-black/20 overflow-hidden">
-      <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-navy-700 bg-navy-900/60">
-        <span className="w-2.5 h-2.5 rounded-full bg-ink-500/40" />
-        <span className="w-2.5 h-2.5 rounded-full bg-ink-500/40" />
-        <span className="w-2.5 h-2.5 rounded-full bg-ink-500/40" />
-        <span className="ml-3 text-xs font-mono text-ink-500">career.sql</span>
+    <div className="rounded-xl border-2 border-ink bg-night shadow-sticker-red overflow-hidden">
+      <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-night-700 bg-night-800">
+        <span className="w-2.5 h-2.5 rounded-full bg-red" />
+        <span className="w-2.5 h-2.5 rounded-full bg-sun" />
+        <span className="w-2.5 h-2.5 rounded-full bg-night-muted" />
+        <span className="ml-3 text-xs font-mono text-night-muted">career.sql</span>
       </div>
-      <pre className="p-6 font-mono text-sm sm:text-base text-teal-400 whitespace-pre-wrap min-h-[7rem] leading-relaxed">
+      <pre className="p-6 font-mono text-sm sm:text-base text-sun whitespace-pre-wrap min-h-[7rem] leading-relaxed">
         {displayed}
-        <span className="inline-block w-2 bg-teal-400 animate-caret ml-0.5 align-middle h-4" />
+        <span className="inline-block w-2 bg-sun animate-caret ml-0.5 align-middle h-4" />
       </pre>
     </div>
   );

@@ -1,42 +1,55 @@
 'use client';
 
-/* eslint-disable @next/next/no-img-element -- must match the clips' box exactly for a seamless swap. */
-
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { CHARACTER, MEDIA_CLASS } from './introAssets';
+import { CHARACTER, IDLE, MEDIA_CLASS } from './introAssets';
 
 const ALT = 'Luffy, a cartoon guide in a red hoodie and backwards black cap, smiling';
 
 const LOOP = { repeat: Infinity, ease: 'easeInOut' } as const;
 
-/** neutral-pose.png with a slow float, breathing scale and slight tilt (or a still when animate is false). */
-export default function IdleCharacter({ animate }: { animate: boolean }) {
+/**
+ * neutral-pose.png with a slow float, breathing scale and slight tilt.
+ * animate=false eases him back to rest (used before the waiting clip and for reduced motion);
+ * hidden=true hides him instantly while a clip is showing in the same spot.
+ */
+export default function IdleCharacter({
+  animate,
+  hidden = false,
+}: {
+  animate: boolean;
+  hidden?: boolean;
+}) {
   const [failed, setFailed] = useState(false);
   if (failed) return null;
 
-  const props = {
-    src: CHARACTER.neutral,
-    draggable: false,
-    className: MEDIA_CLASS,
-    onError: () => setFailed(true),
-  };
-
-  if (!animate) return <img alt={ALT} {...props} />;
-
+  // Always the same element, so switching between still and idle never remounts it.
   return (
     <motion.img
+      src={CHARACTER.neutral}
       alt={ALT}
-      {...props}
-      // Pivot near the feet so the tilt reads as a sway, not a spin.
-      style={{ transformOrigin: '50% 90%' }}
-      // Every keyframe track starts at rest, matching namaste's last frame.
-      animate={{ y: [0, -8, 0], scale: [1, 1.02, 1], rotate: [0, -1.5, 0, 1.5, 0] }}
-      transition={{
-        y: { duration: 4, ...LOOP },
-        scale: { duration: 3.2, ...LOOP },
-        rotate: { duration: 6.5, ...LOOP },
-      }}
+      draggable={false}
+      className={MEDIA_CLASS}
+      onError={() => setFailed(true)}
+      // Pivot near the feet so the tilt reads as a sway, not a spin. Opacity is set
+      // directly (not animated) so the swap with a clip happens in a single frame.
+      style={{ transformOrigin: '50% 88%', opacity: hidden ? 0 : 1 }}
+      initial={false}
+      // Every track starts at rest, so the loop begins exactly where the glide ended.
+      animate={
+        animate
+          ? { y: [0, -IDLE.floatPx, 0], scale: [1, 1.02, 1], rotate: [0, -1.5, 0, 1.5, 0] }
+          : { y: 0, scale: 1, rotate: 0 }
+      }
+      transition={
+        animate
+          ? {
+              y: { duration: IDLE.floatS, ...LOOP },
+              scale: { duration: IDLE.breatheS, ...LOOP },
+              rotate: { duration: IDLE.tiltS, ...LOOP },
+            }
+          : { duration: IDLE.settleS, ease: 'easeOut' }
+      }
     />
   );
 }

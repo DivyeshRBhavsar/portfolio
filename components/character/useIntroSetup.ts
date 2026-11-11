@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 
 export type MediaFormat = 'webm' | 'webp';
 
@@ -10,7 +10,7 @@ export type IntroSetup = {
   seenThisSession: boolean;
 };
 
-const SEEN_KEY = 'luffy-intro-seen';
+import { REDUCED_QUERY, SEEN_KEY, SKIP_CSS, SKIP_STYLE_ID } from './introGuard';
 
 function readSeen(): boolean {
   try {
@@ -26,6 +26,23 @@ function markSeen(): void {
   } catch {
     // Storage blocked: the intro simply plays again next visit.
   }
+}
+
+function prefersReducedMotion(): boolean {
+  try {
+    return window.matchMedia(REDUCED_QUERY).matches;
+  } catch {
+    return false;
+  }
+}
+
+/** Same rule as the guard script, for client-side navigations (where it didn't run). */
+function hideOverlayFromNowOn(): void {
+  if (document.getElementById(SKIP_STYLE_ID)) return;
+  const style = document.createElement('style');
+  style.id = SKIP_STYLE_ID;
+  style.textContent = SKIP_CSS;
+  document.head.appendChild(style);
 }
 
 /**
@@ -50,17 +67,15 @@ function detectFormat(): MediaFormat {
   }
 }
 
-function prefersReducedMotion(): boolean {
-  try {
-    return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  } catch {
-    return false;
-  }
-}
-
 /** Returns null during SSR and the first client render, then the browser's setup. */
 export function useIntroSetup(): IntroSetup | null {
   const [setup, setSetup] = useState<IntroSetup | null>(null);
+
+  // Before paint: on a client-side navigation back to the homepage the guard script
+  // didn't run, so hide the overlay here if the intro shouldn't play.
+  useLayoutEffect(() => {
+    if (readSeen() || prefersReducedMotion()) hideOverlayFromNowOn();
+  }, []);
 
   useEffect(() => {
     // Read and mark inside the frame callback: in dev, StrictMode's extra

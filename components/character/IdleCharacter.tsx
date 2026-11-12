@@ -2,15 +2,14 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { CHARACTER, IDLE, MEDIA_CLASS } from './introAssets';
-
-const ALT = 'Luffy, a cartoon guide in a red hoodie and backwards black cap, smiling';
+import { IDLE, MEDIA_CLASS, NEUTRAL_POSE } from './introAssets';
+import { luffyAlt } from './luffyLines';
 
 const LOOP = { repeat: Infinity, ease: 'easeInOut' } as const;
 
 /**
  * neutral-pose.png with a slow float, breathing scale and slight tilt.
- * animate=false eases him back to rest (used before the waiting clip and for reduced motion);
+ * animate=false eases him back to rest (before a clip starts, and for reduced motion);
  * hidden=true hides him instantly while a clip is showing in the same spot.
  */
 export default function IdleCharacter({
@@ -26,8 +25,8 @@ export default function IdleCharacter({
   // Always the same element, so switching between still and idle never remounts it.
   return (
     <motion.img
-      src={CHARACTER.neutral}
-      alt={ALT}
+      src={NEUTRAL_POSE}
+      alt={luffyAlt}
       draggable={false}
       className={MEDIA_CLASS}
       onError={() => setFailed(true)}
@@ -35,7 +34,7 @@ export default function IdleCharacter({
       // directly (not animated) so the swap with a clip happens in a single frame.
       style={{ transformOrigin: '50% 88%', opacity: hidden ? 0 : 1 }}
       initial={false}
-      // Every track starts at rest, so the loop begins exactly where the glide ended.
+      // Every track starts at rest, so the loop begins exactly where a clip ended.
       animate={
         animate
           ? { y: [0, -IDLE.floatPx, 0], scale: [1, 1.02, 1], rotate: [0, -1.5, 0, 1.5, 0] }

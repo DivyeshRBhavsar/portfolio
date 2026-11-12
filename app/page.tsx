@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { ArrowRight, ArrowUpRight } from 'lucide-react';
 import TerminalHero from '@/components/TerminalHero';
 import Reveal from '@/components/Reveal';
-import WelcomeIntro from '@/components/character/WelcomeIntro';
+import HomeStage from '@/components/character/HomeStage';
 import { getAllPosts } from '@/lib/posts';
 
 const competencies = [
@@ -13,45 +13,39 @@ const competencies = [
 
 export default function HomePage() {
   const latestPosts = getAllPosts().slice(0, 3);
+  const latestPostHref = latestPosts[0] ? `/blog/${latestPosts[0].slug}` : '/blog';
 
   return (
     <div>
-      {/* Hero band: same peach as the intro overlay, so the overlay fades into it.
-          Mobile order: name → Luffy + bubble → bio. Desktop: Luffy in the right column. */}
-      <div className="bg-peach">
-        <section className="max-w-5xl mx-auto px-6 pt-12 sm:pt-20 pb-16 grid gap-8 sm:grid-cols-[minmax(0,1fr)_340px] sm:gap-x-12">
-          <div className="sm:col-start-1 sm:row-start-1 sm:self-end">
-            <p className="font-mono text-sm text-red-deep mb-3">Data Analyst · AI Resident @ Apziva</p>
-            <h1 className="font-display text-4xl sm:text-5xl font-bold leading-tight text-ink">
-              Divyesh Bhavsar
-            </h1>
-          </div>
-          <div className="sm:col-start-2 sm:row-start-1 sm:row-span-2 sm:self-start">
-            <WelcomeIntro />
-          </div>
-          <div id="about" className="scroll-mt-24 sm:col-start-1 sm:row-start-2 sm:self-start">
-            <p className="text-ink-muted leading-relaxed">
-              I build data pipelines, dashboards, and machine learning systems that hold up in
-              production &mdash; not just in a notebook. Currently an AI Resident at Apziva, with a
-              background spanning credit union analytics, financial data validation, and applied ML.
-            </p>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                href="/projects"
-                className="px-5 py-2.5 rounded-full border-2 border-ink bg-red text-white font-medium hover:-translate-y-0.5 hover:shadow-sticker transition-all"
-              >
-                View Projects
-              </Link>
-              <Link
-                href="/contact"
-                className="px-5 py-2.5 rounded-full border-2 border-ink bg-surface text-ink font-medium hover:bg-sun hover:text-on-sun hover:-translate-y-0.5 hover:shadow-sticker transition-all"
-              >
-                Get in Touch
-              </Link>
-            </div>
-          </div>
-        </section>
-      </div>
+      {/* Luffy's stage: welcome, lights up, conversation. */}
+      <HomeStage latestPostHref={latestPostHref} />
+
+      {/* First section below the stage: Tour and "Skip to portfolio" scroll here. */}
+      <section id="about" className="scroll-mt-20 max-w-5xl mx-auto px-6 pt-16 sm:pt-20">
+        <p className="font-mono text-sm text-red-deep mb-3">Data Analyst · AI Resident @ Apziva</p>
+        <h1 className="font-display text-4xl sm:text-5xl font-bold leading-tight text-ink">
+          Divyesh Bhavsar
+        </h1>
+        <p className="mt-6 max-w-2xl text-ink-muted leading-relaxed">
+          I build data pipelines, dashboards, and machine learning systems that hold up in
+          production &mdash; not just in a notebook. Currently an AI Resident at Apziva, with a
+          background spanning credit union analytics, financial data validation, and applied ML.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-4">
+          <Link
+            href="/projects"
+            className="px-5 py-2.5 rounded-full border-2 border-ink bg-red text-white font-medium hover:-translate-y-0.5 hover:shadow-sticker transition-all"
+          >
+            View Projects
+          </Link>
+          <Link
+            href="/contact"
+            className="px-5 py-2.5 rounded-full border-2 border-ink bg-surface text-ink font-medium hover:bg-sun hover:text-on-sun hover:-translate-y-0.5 hover:shadow-sticker transition-all"
+          >
+            Get in Touch
+          </Link>
+        </div>
+      </section>
 
       <div className="max-w-5xl mx-auto px-6">
         <section className="py-16 sm:py-20">

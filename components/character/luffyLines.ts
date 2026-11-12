@@ -191,3 +191,36 @@ export const miniLuffyChatOpenLines: string[] = [
 // ── 7. "Currently working on" badge ──────────────────────────────────
 
 export const currentlyWorkingLabel = "🔨 Currently working on:";
+
+// ── 8. Labels on the home stage ──────────────────────────────────────
+// Buttons, links and screen-reader text around the conversation. Edit freely.
+
+export const loadingText = "Getting things ready…";
+export const skipIntroLabel = "Skip intro";
+export const skipToPortfolioLabel = "Skip to portfolio ↓";
+export const forgetMeLabel = "Not you? Forget me";
+export const nameInputLabel = "Your name";
+export const typingIndicatorLabel = "Luffy is typing";
+export const luffyAlt = "Luffy, a cartoon guide in a red hoodie and backwards black cap, smiling";
+
+// Intent chips. {lastPage} = e.g. "Projects"
+export const chipLabels = {
+  tour: "🚀 Give me the tour",
+  hiring: "💼 I'm hiring",
+  ml: "🧠 ML projects",
+  blog: "✍️ Blog",
+  ask: "💬 Ask Luffy",
+  continue: "↩️ Continue: {lastPage}",
+  whatsNew: "✨ What's new",
+  tourAgain: "🚀 Tour again",
+};
+
+// How pages are named in {lastPage}. Blog posts use their title: {title}
+export const pageNames: Record<string, string> = {
+  "/projects": "Projects",
+  "/blog": "Blog",
+  "/contact": "Contact page",
+};
+export const blogPostName = "post “{title}”";
+export const blogPostFallbackName = "blog";
+export const stageLabel = "Meet Luffy, Divyesh's guide";

@@ -1,0 +1,37 @@
+'use client';
+
+import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
+import { blogPostFallbackName, blogPostName, pageNames } from './luffyLines';
+import { fill } from './speech';
+import { beginSession, recordPage } from './visitorMemory';
+
+/** Blog posts render their title in the page's <h1> (there's no per-post <title>). */
+const TITLE_READ_DELAY_MS = 300;
+
+function labelFor(path: string): string | null {
+  if (pageNames[path]) return pageNames[path];
+  if (path.startsWith('/blog/')) {
+    const title = document.querySelector('main h1')?.textContent?.trim();
+    return title ? fill(blogPostName, { title }) : blogPostFallbackName;
+  }
+  return null; // home, 404s, anything else: not worth "continuing"
+}
+
+/** Mounted once in the root layout: starts the visit and remembers the last 3 pages. */
+export default function VisitTracker() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    beginSession();
+    if (pathname === '/') return;
+    // Wait for the new page's content (client navigation commits it after this runs).
+    const timer = setTimeout(() => {
+      const label = labelFor(pathname);
+      if (label) recordPage({ path: pathname, label });
+    }, TITLE_READ_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
+  return null;
+}

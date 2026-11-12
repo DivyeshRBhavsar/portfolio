@@ -111,6 +111,196 @@ html.theme-transition *::after {
   transition-timing-function: ease;
 }
 
+/* The stage gradient colours are registered (@property) so they can cross-fade too. */
+html.theme-transition {
+  transition-property: background-color, border-color, color, --stage-1, --stage-2, --stage-3;
+}
+
+@property --stage-1 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #f6ddc3;
+}
+@property --stage-2 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffe7a3;
+}
+@property --stage-3 {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #fae2b3;
+}
+
+/* ---------- Home stage ----------
+   <html data-stage> is set before first paint by STAGE_SCRIPT, then by HomeStage:
+   welcome (loading + clip) · lights (coming up) · chat. Failsafe: the loading screen and
+   dim layer remove themselves 10 s after they appear (CSS only, works even if React
+   crashed), and the inline script's timer sets data-stage-failsafe, which unlocks
+   scrolling. Keep the 10s here in step with STAGE_FAILSAFE_MS (introAssets.ts). */
+
+html[data-stage='welcome'] {
+  overflow: hidden;
+}
+
+.site-header {
+  transition: opacity 1.2s ease;
+}
+html[data-stage='welcome'] .site-header {
+  opacity: 0;
+  visibility: hidden;
+}
+html[data-header='faint'] .site-header {
+  opacity: 0.3;
+}
+html[data-header='faint'] .site-header:hover,
+html[data-header='faint'] .site-header:focus-within {
+  opacity: 1;
+}
+
+/* Loading screen: only during the welcome, invisible for the first 300 ms. */
+.stage-loading {
+  display: none;
+  opacity: 0;
+}
+html[data-stage='welcome'] .stage-loading,
+html[data-stage='lights'] .stage-loading {
+  display: flex;
+  animation:
+    stage-fade-in 0.3s ease 0.3s forwards,
+    stage-failsafe 0.4s ease 10s forwards;
+}
+
+/* Spotlight dim layer. --spot-* are set from Luffy's position; --spot-grow widens it. */
+@property --spot-grow {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 1;
+}
+.stage-dim {
+  display: none;
+  --spot-x: 50%;
+  --spot-y: 40%;
+  --spot-size: 260px;
+  background: radial-gradient(
+    circle at var(--spot-x) var(--spot-y),
+    transparent calc(var(--spot-size) * var(--spot-grow) * 0.5),
+    rgba(10, 8, 22, 0.84) calc(var(--spot-size) * var(--spot-grow))
+  );
+  transition:
+    --spot-grow 1.2s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 1.2s ease-in;
+}
+html[data-stage='welcome'] .stage-dim,
+html[data-stage='lights'] .stage-dim {
+  display: block;
+  animation: stage-failsafe 0.4s ease 10s forwards;
+}
+.stage-dim.is-up {
+  --spot-grow: 9;
+  opacity: 0;
+}
+
+.stage-skip-intro {
+  display: none;
+}
+html[data-stage='welcome'] .stage-skip-intro {
+  display: inline-flex;
+}
+
+html[data-stage-failsafe] .stage-loading,
+html[data-stage-failsafe] .stage-dim,
+html[data-stage-failsafe] .stage-skip-intro {
+  display: none !important;
+}
+
+@keyframes stage-fade-in {
+  to {
+    opacity: 1;
+  }
+}
+@keyframes stage-failsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+/* Background: slow drifting gradient (20 s there and back), hidden until the lights come up. */
+.stage-backdrop {
+  background: linear-gradient(
+    120deg,
+    var(--stage-1),
+    var(--stage-2),
+    var(--stage-3),
+    var(--stage-1)
+  );
+  background-size: 300% 300%;
+  animation: stage-drift 10s ease-in-out infinite alternate;
+  transition: opacity 1.2s ease;
+}
+html[data-stage='welcome'] .stage-backdrop {
+  opacity: 0;
+}
+@keyframes stage-drift {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
+
+.stage-stars {
+  display: none;
+}
+:root[data-theme='night'] .stage-stars {
+  display: block;
+}
+.stage-star {
+  background: #fff6e0;
+  opacity: 0.55;
+  animation: stage-twinkle 4.5s ease-in-out infinite;
+}
+@keyframes stage-twinkle {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.12;
+  }
+}
+
+.stage-bounce {
+  animation: stage-bounce 1.4s ease-in-out infinite;
+}
+@keyframes stage-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-14px);
+  }
+}
+
+.typing-dot {
+  animation: typing-dot 1.1s ease-in-out infinite;
+}
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
 html {
   scroll-behavior: smooth;
   /* Reserve the scrollbar's space so locking scroll during the intro doesn't shift the layout. */
@@ -125,6 +315,16 @@ html {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Stars and gradient stay still (the blanket rule above would end them mid-cycle). */
+  .stage-backdrop,
+  .stage-star,
+  .stage-bounce,
+  .typing-dot {
+    animation: none !important;
   }
 }
 

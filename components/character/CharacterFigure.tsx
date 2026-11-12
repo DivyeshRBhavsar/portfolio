@@ -2,36 +2,24 @@
 
 import type { ReactNode } from 'react';
 import { motion } from 'motion/react';
-import { CHARACTER_DROP_SHADOW, GLIDE, IDLE } from './introAssets';
+import { CHARACTER_DROP_SHADOW, IDLE } from './introAssets';
 
 const LOOP = { repeat: Infinity, ease: 'easeInOut' } as const;
 
 /**
- * The 5:6 box Luffy lives in, with his ground shadow and outline shadow. Used both in
- * the intro overlay and in the hero so the shared-element glide (layoutId) matches.
+ * The 5:6 box Luffy lives in, with his ground shadow, night glow, time-of-day tint and
+ * outline shadow. Every clip and the still go inside, so they all get the same light.
  */
 export default function CharacterFigure({
-  layoutId,
   floating,
-  raised = false,
-  onLayoutAnimationComplete,
   children,
 }: {
-  layoutId?: string;
   /** Idle loop running: the ground shadow shrinks and fades as he floats up. */
   floating: boolean;
-  /** Lift above the fading overlay while gliding. */
-  raised?: boolean;
-  onLayoutAnimationComplete?: () => void;
   children: ReactNode;
 }) {
   return (
-    <motion.div
-      layoutId={layoutId}
-      transition={{ layout: GLIDE }}
-      onLayoutAnimationComplete={onLayoutAnimationComplete}
-      className={`relative aspect-[5/6] w-full ${raised ? 'z-[61]' : ''}`}
-    >
+    <div className="relative aspect-[5/6] w-full">
       {/* Ground shadow under his feet (feet sit at ~88% of the frame height). */}
       <motion.div
         aria-hidden="true"
@@ -60,6 +48,6 @@ export default function CharacterFigure({
       >
         {children}
       </div>
-    </motion.div>
+    </div>
   );
 }

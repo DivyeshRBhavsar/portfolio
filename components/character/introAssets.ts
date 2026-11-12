@@ -1,67 +1,85 @@
 /* ---------- Files (public/character) ---------- */
 
-export const CHARACTER = {
-  // Wave and greeting joined into one clip.
-  welcome: { webm: '/character/welcome.webm', webp: '/character/welcome.webp' },
-  waiting: { webm: '/character/waiting-watch.webm', webp: '/character/waiting-watch.webp' },
-  neutral: '/character/neutral-pose.png',
+export const NEUTRAL_POSE = '/character/neutral-pose.png';
+export const LUFFY_HEAD = {
+  png: '/character/luffy-head.png',
+  webm: '/character/luffy-head.webm',
+  webp: '/character/luffy-head.webp', // loops
 } as const;
 
 /**
- * Clip lengths measured from the files (WebM duration header; WebP sum of frame
- * durations). Both WebPs have loop count 1 (play once). Re-measure if the files change.
+ * Every clip Luffy can play. Lengths are measured from the files (WebM duration header;
+ * WebP sum of frame durations); re-measure if a file changes. All WebPs play once.
+ * `wide` clips are 625×600 with 125 px extra on the left: shown at 125% width, shifted
+ * left by 25%, inside his normal 5:6 box.
  */
-export const CLIP_MS = {
-  welcome: { webm: 8292, webp: 8266 },
-  waiting: { webm: 7042, webp: 7066 },
-} as const;
+export const CLIPS = {
+  welcome: { file: 'welcome', ms: { webm: 8292, webp: 8266 } }, // wave + namaste
+  welcomeShort: { file: 'welcome-short', ms: { webm: 3500, webp: 3532 } }, // wave only
+  talkingShort: { file: 'talking-short', ms: { webm: 3042, webp: 3066 } },
+  talking: { file: 'talking', ms: { webm: 7042, webp: 7066 } }, // for longer answers later
+  celebrate: { file: 'celebrate', ms: { webm: 4917, webp: 4932 } },
+  waiting: { file: 'waiting-watch', ms: { webm: 7042, webp: 7066 } },
+  thinking: { file: 'thinking', ms: { webm: 7042, webp: 7066 } },
+  pointSide: { file: 'point-side', ms: { webm: 7042, webp: 7066 }, wide: true },
+  pointUp: { file: 'point-up', ms: { webm: 7042, webp: 7066 }, wide: true },
+} as const satisfies Record<
+  string,
+  { file: string; ms: { webm: number; webp: number }; wide?: boolean }
+>;
+
+export type ClipName = keyof typeof CLIPS;
+
+export function clipSrc(clip: ClipName, format: 'webm' | 'webp'): string {
+  return `/character/${CLIPS[clip].file}.${format}`;
+}
+
+/** The clip Luffy plays while a message types. Switch to 'talking' for the full 7 s one. */
+export const MESSAGE_TALK_CLIP: ClipName = 'talkingShort';
 
 /** If a clip hasn't finished by its length + this, carry on anyway. */
 export const SAFETY_MARGIN_MS = 1000;
 
-/* ---------- What Luffy says (edit freely) ---------- */
+/* ---------- Loading and welcome ---------- */
 
-/** Shown under Luffy on the intro overlay; the three dots are animated separately. */
-export const LOADING_LABEL = 'Loading page';
-
-export const MESSAGES = {
-  /** Typed after the glide into the hero. */
-  first:
-    "Hi! I'm Luffy, Divyesh's guide. Up top you'll find his Projects, Blog and Contact. Click around, or let me show you!",
-  /** Replaces the first message the first time the waiting clip plays, then stays. */
-  second: "Take your time and enjoy the fun! I'll be right here if you need me.",
-} as const;
-
+/** The loading screen only appears if the welcome isn't ready by then (CSS delay too). */
+export const LOADING_SHOW_AFTER_MS = 300;
+/** Give up waiting for the welcome clip and go straight to the conversation. */
+export const LOADING_GIVE_UP_MS = 8000;
 /**
- * Words in MESSAGES.first that briefly highlight a Nav link as they're typed.
- * Keep each `word` spelled exactly as it appears in the message (case-sensitive).
+ * Hard limit for the loading screen and spotlight dim layer: after this they remove
+ * themselves (CSS animation, plus an inline-script timer that unlocks scrolling), even
+ * if React has crashed. Counted from page load, and again from when the welcome starts.
+ * Keep it in step with the 10s delays in app/globals.css.
  */
-export const NAV_MENTIONS: ReadonlyArray<{ word: string; href: string }> = [
-  { word: 'Projects', href: '/projects' },
-  { word: 'Blog', href: '/blog' },
-  { word: 'Contact', href: '/contact' },
-];
+export const STAGE_FAILSAFE_MS = 10000;
 
-/** How long a Nav link stays highlighted after its word finishes typing. */
-export const NAV_HIGHLIGHT_HOLD_MS = 700;
+/** Lights come up: spotlight widens, stage brightens, header fades in. Matches globals.css. */
+export const LIGHTS_UP_S = 1.2;
 
+/* ---------- Conversation ---------- */
+
+/** "• • •" before each message. */
+export const TYPING_INDICATOR_MS = 700;
 export const TYPE_INTERVAL_MS = 38;
+/** Pause between one message finishing and the next one's typing indicator. */
+export const MESSAGE_GAP_MS = 350;
+/** Messages visible in the bubble (older ones scroll away). */
+export const MAX_VISIBLE_MESSAGES = 3;
+/** Chance of the weekend line on a Saturday or Sunday. */
+export const WEEKEND_LINE_CHANCE = 0.5;
 
-/* ---------- Timing ---------- */
-
-/** Glide from the overlay into the hero. */
-export const GLIDE = { duration: 0.9, ease: [0.22, 1, 0.36, 1] } as const;
-export const OVERLAY_FADE_S = 0.6;
+/* ---------- Idle ---------- */
 
 /** Idle loop. The ground shadow shares floatS so it shrinks exactly as he rises. */
 export const IDLE = { floatS: 4, breatheS: 3.2, tiltS: 6.5, floatPx: 8, settleS: 0.5 } as const;
 
-/** Waiting clip: first play after this much idle (counted once the first message is typed)… */
-export const WAITING_FIRST_DELAY_MS = 10000;
-/** …then again after a random gap in this range, while the visitor stays. */
-export const WAITING_REPEAT_MS = { min: 12000, max: 15000 } as const;
-/** Pause the float and let him ease back to rest before the clip starts. */
-export const WAITING_SETTLE_MS = 600;
+/** No interaction for this long → waiting clip + an idle nudge message (first time only)… */
+export const IDLE_NUDGE_MS = 10000;
+/** …then the waiting clip again after a random gap in this range, while still idle. */
+export const IDLE_REPEAT_MS = { min: 12000, max: 15000 } as const;
+/** Pause the float and let him ease back to rest before a clip starts. */
+export const CLIP_SETTLE_MS = 600;
 
 /* ---------- Look ---------- */
 
@@ -69,3 +87,6 @@ export const WAITING_SETTLE_MS = 600;
 export const CHARACTER_DROP_SHADOW = 'drop-shadow(0 1px 1.5px rgba(26, 26, 26, 0.28))';
 
 export const MEDIA_CLASS = 'absolute inset-0 h-full w-full object-contain select-none';
+/** For `wide` clips (see CLIPS). */
+export const WIDE_MEDIA_CLASS =
+  'absolute inset-y-0 -left-1/4 h-full w-[125%] max-w-none object-contain select-none';

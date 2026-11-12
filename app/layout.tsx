@@ -3,7 +3,8 @@ import { Space_Grotesk, Inter, IBM_Plex_Mono } from 'next/font/google';
 import './globals.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
-import { OVERLAY_GUARD_SCRIPT } from '@/components/character/introGuard';
+import VisitTracker from '@/components/character/VisitTracker';
+import { STAGE_SCRIPT } from '@/components/character/introGuard';
 import ThemeController from '@/components/theme/ThemeController';
 import { THEME_SCRIPT } from '@/components/theme/themes';
 
@@ -44,10 +45,11 @@ export default function RootLayout({
     >
       <body className="min-h-screen flex flex-col">
         {/* Both run during parsing, before any content paints: the theme first (no flash of
-            the wrong colours), then the intro guard (revisits never flash the overlay). */}
+            the wrong colours), then the home stage's starting state and failsafe timer. */}
         <script id="theme-init" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
-        <script id="luffy-intro-guard" dangerouslySetInnerHTML={{ __html: OVERLAY_GUARD_SCRIPT }} />
+        <script id="luffy-stage-guard" dangerouslySetInnerHTML={{ __html: STAGE_SCRIPT }} />
         <ThemeController />
+        <VisitTracker />
         <Nav />
         <main className="flex-1">{children}</main>
         <Footer />

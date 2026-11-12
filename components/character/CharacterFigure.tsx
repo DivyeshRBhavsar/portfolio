@@ -44,7 +44,20 @@ export default function CharacterFigure({
         }
         transition={floating ? { duration: IDLE.floatS, ...LOOP } : { duration: 0.3 }}
       />
-      <div className="absolute inset-0" style={{ filter: CHARACTER_DROP_SHADOW }}>
+      {/* Night only (--luffy-glow is 0 otherwise): a soft warm glow behind him. */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-[8%] rounded-full transition-opacity duration-1000"
+        style={{
+          opacity: 'var(--luffy-glow)',
+          background: 'radial-gradient(closest-side, rgba(255, 196, 140, 0.32), transparent)',
+        }}
+      />
+      {/* --luffy-tint matches him to the time-of-day light, for every clip and the still. */}
+      <div
+        className="absolute inset-0"
+        style={{ filter: `var(--luffy-tint) ${CHARACTER_DROP_SHADOW}` }}
+      >
         {children}
       </div>
     </motion.div>

@@ -23,7 +23,7 @@ export default function ProjectGallery({ repos, languages }: { repos: Repo[]; la
             onClick={() => setActive(f)}
             className={`pill ${
               active === f
-                ? 'bg-sun text-ink border-ink'
+                ? 'bg-sun text-on-sun border-ink'
                 : 'bg-surface border-ink-muted text-ink hover:border-ink hover:bg-sun/40'
             }`}
           >

@@ -8,6 +8,109 @@
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
+/* ---------- Time-of-day themes ----------
+   Set on <html data-theme> by the pre-paint script (components/theme/themes.ts).
+   Colours are RGB triplets so Tailwind's opacity modifiers work (bg-cream/85).
+   All text pairs pass WCAG AA in every theme. Without JS the day theme applies. */
+
+:root,
+:root[data-theme='day'] {
+  --c-peach: 246 221 195;
+  --c-cream: 255 245 234;
+  --c-surface: 255 255 255;
+  --c-ink: 26 26 26;
+  --c-ink-muted: 90 74 63;
+  --c-red: 226 35 26;
+  --c-red-deep: 184 21 14;
+  --c-ring: 226 35 26;
+  --c-sun: 255 197 49;
+  --c-on-sun: 26 26 26;
+  --c-shadow: 26 26 26;
+  /* Home stage background (slowly moving gradient). */
+  --stage-1: #f6ddc3;
+  --stage-2: #ffe7a3;
+  --stage-3: #fae2b3;
+  /* Luffy matches the light. Never "none": it's combined with his drop-shadow. */
+  --luffy-tint: brightness(1);
+  --luffy-glow: 0;
+  color-scheme: light;
+}
+
+:root[data-theme='dawn'] {
+  /* Cool pastel sunrise: blush page, lavender → rose → pale gold stage. */
+  --c-peach: 245 225 234;
+  --c-cream: 253 241 244;
+  --c-ink: 42 34 48;
+  --c-ink-muted: 94 78 102;
+  --c-shadow: 42 34 48;
+  --stage-1: #e6dafb;
+  --stage-2: #f9d3d6;
+  --stage-3: #ffe9b0;
+  --luffy-tint: hue-rotate(-6deg) saturate(1.03) brightness(1.01);
+}
+
+:root[data-theme='sunset'] {
+  --c-peach: 249 205 180;
+  --c-cream: 255 241 234;
+  --c-ink-muted: 79 54 44;
+  --c-red-deep: 168 19 12;
+  --c-ring: 196 26 18;
+  --stage-1: #f7a86e;
+  --stage-2: #ef8e8f;
+  --stage-3: #f6b98e;
+  --luffy-tint: sepia(0.1) saturate(1.08);
+}
+
+:root[data-theme='night'] {
+  --c-peach: 28 26 56;
+  --c-cream: 18 22 46;
+  --c-surface: 34 40 66;
+  --c-ink: 238 232 242;
+  --c-ink-muted: 180 174 203;
+  --c-red-deep: 255 138 127;
+  --c-ring: 255 138 127;
+  --c-shadow: 110 104 144;
+  --stage-1: #0e1330;
+  --stage-2: #22173a;
+  --stage-3: #151b3d;
+  --luffy-tint: brightness(0.9);
+  --luffy-glow: 1;
+  color-scheme: dark;
+}
+
+/* Blog posts: prose-neutral's fixed greys are dark; at night use the theme's light text. */
+:root[data-theme='night'] .prose.prose-neutral {
+  --tw-prose-body: rgb(var(--c-ink));
+  --tw-prose-headings: rgb(var(--c-ink));
+  --tw-prose-lead: rgb(var(--c-ink-muted));
+  --tw-prose-links: rgb(var(--c-red-deep));
+  --tw-prose-bold: rgb(var(--c-ink));
+  --tw-prose-counters: rgb(var(--c-ink-muted));
+  --tw-prose-bullets: rgb(var(--c-ink-muted));
+  --tw-prose-hr: rgb(var(--c-ink) / 0.15);
+  --tw-prose-quotes: rgb(var(--c-ink));
+  --tw-prose-quote-borders: rgb(var(--c-ink) / 0.25);
+  --tw-prose-captions: rgb(var(--c-ink-muted));
+  --tw-prose-kbd: rgb(var(--c-ink));
+  --tw-prose-kbd-shadows: var(--c-ink);
+  --tw-prose-code: rgb(var(--c-ink));
+  --tw-prose-pre-code: #e5e5e5;
+  --tw-prose-pre-bg: #0b0e1f;
+  --tw-prose-th-borders: rgb(var(--c-ink) / 0.3);
+  --tw-prose-td-borders: rgb(var(--c-ink) / 0.15);
+}
+
+/* While the theme changes (added for 1 s by themeStore.ts), colours cross-fade. */
+html.theme-transition,
+html.theme-transition *,
+html.theme-transition *::before,
+html.theme-transition *::after {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow, filter,
+    opacity;
+  transition-duration: 1s;
+  transition-timing-function: ease;
+}
+
 html {
   scroll-behavior: smooth;
   /* Reserve the scrollbar's space so locking scroll during the intro doesn't shift the layout. */
@@ -30,14 +133,14 @@ body {
 }
 
 ::selection {
-  @apply bg-sun text-ink;
+  @apply bg-sun text-on-sun;
 }
 
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid theme('colors.red.DEFAULT');
+  outline: 2px solid rgb(var(--c-ring));
   outline-offset: 2px;
 }
 

@@ -159,7 +159,7 @@ export default function WelcomeIntro() {
           <button
             type="button"
             onClick={handleSkip}
-            className="absolute right-4 top-4 rounded-full border-2 border-ink bg-surface px-4 py-2 font-mono text-sm text-ink transition-all hover:-translate-y-0.5 hover:bg-sun hover:shadow-sticker sm:right-6 sm:top-6"
+            className="absolute right-4 top-4 rounded-full border-2 border-ink bg-surface px-4 py-2 font-mono text-sm text-ink transition-all hover:-translate-y-0.5 hover:bg-sun hover:text-on-sun hover:shadow-sticker sm:right-6 sm:top-6"
           >
             Skip intro
           </button>

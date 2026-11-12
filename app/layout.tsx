@@ -4,6 +4,8 @@ import './globals.css';
 import Nav from '@/components/Nav';
 import Footer from '@/components/Footer';
 import { OVERLAY_GUARD_SCRIPT } from '@/components/character/introGuard';
+import ThemeController from '@/components/theme/ThemeController';
+import { THEME_SCRIPT } from '@/components/theme/themes';
 
 const display = Space_Grotesk({
   subsets: ['latin'],
@@ -34,10 +36,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
+    // suppressHydrationWarning: the theme script sets data-theme on <html> before React loads.
+    <html
+      lang="en"
+      className={`${display.variable} ${body.variable} ${mono.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen flex flex-col">
-        {/* Runs during parsing, before the intro overlay's markup, so revisits never flash it. */}
+        {/* Both run during parsing, before any content paints: the theme first (no flash of
+            the wrong colours), then the intro guard (revisits never flash the overlay). */}
+        <script id="theme-init" dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <script id="luffy-intro-guard" dangerouslySetInnerHTML={{ __html: OVERLAY_GUARD_SCRIPT }} />
+        <ThemeController />
         <Nav />
         <main className="flex-1">{children}</main>
         <Footer />

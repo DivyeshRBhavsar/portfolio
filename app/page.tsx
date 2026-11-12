@@ -44,7 +44,7 @@ export default function HomePage() {
               </Link>
               <Link
                 href="/contact"
-                className="px-5 py-2.5 rounded-full border-2 border-ink bg-surface text-ink font-medium hover:bg-sun hover:-translate-y-0.5 hover:shadow-sticker transition-all"
+                className="px-5 py-2.5 rounded-full border-2 border-ink bg-surface text-ink font-medium hover:bg-sun hover:text-on-sun hover:-translate-y-0.5 hover:shadow-sticker transition-all"
               >
                 Get in Touch
               </Link>
@@ -122,7 +122,7 @@ export default function HomePage() {
                     {post.tags.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
                         {post.tags.slice(0, 2).map((tag) => (
-                          <span key={tag} className="pill bg-sun border-ink text-ink text-xs py-1">
+                          <span key={tag} className="pill bg-sun border-ink text-on-sun text-xs py-1">
                             {tag}
                           </span>
                         ))}

@@ -42,9 +42,9 @@ export default function ContactForm() {
 
   if (status === 'sent') {
     return (
-      <div className="rounded-xl border-2 border-ink bg-sun p-6 text-ink shadow-sticker">
+      <div className="rounded-xl border-2 border-ink bg-sun p-6 text-on-sun shadow-sticker">
         <p className="font-display font-semibold mb-1">Message sent.</p>
-        <p className="text-sm text-ink">Thanks for reaching out &mdash; I&apos;ll reply soon.</p>
+        <p className="text-sm text-on-sun">Thanks for reaching out &mdash; I&apos;ll reply soon.</p>
       </div>
     );
   }

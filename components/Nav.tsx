@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useNavHighlight } from '@/components/character/navHighlight';
+import ThemeToggle from '@/components/theme/ThemeToggle';
 
 const links = [
   { href: '/', label: 'Home' },
@@ -22,29 +23,32 @@ export default function Nav() {
         <Link href="/" className="font-display font-bold text-lg tracking-tight text-ink">
           Divyesh<span className="text-red-deep">.</span>Bhavsar
         </Link>
-        <nav className="flex flex-wrap gap-1 font-mono text-sm">
-          {links.map((link) => {
-            const active =
-              link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
-            const isHighlighted = highlighted === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                aria-current={active ? 'page' : undefined}
-                className={`rounded-full px-3 py-1 transition-colors duration-300 ${
-                  isHighlighted
-                    ? 'bg-red text-white'
-                    : active
-                      ? 'text-red-deep font-medium underline decoration-2 underline-offset-4'
-                      : 'text-ink hover:text-red-deep'
-                }`}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
+        <div className="flex flex-wrap items-center gap-1">
+          <nav className="flex flex-wrap gap-1 font-mono text-sm">
+            {links.map((link) => {
+              const active =
+                link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
+              const isHighlighted = highlighted === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  aria-current={active ? 'page' : undefined}
+                  className={`rounded-full px-3 py-1 transition-colors duration-300 ${
+                    isHighlighted
+                      ? 'bg-red text-white'
+                      : active
+                        ? 'text-red-deep font-medium underline decoration-2 underline-offset-4'
+                        : 'text-ink hover:text-red-deep'
+                  }`}
+                >
+                  {link.label}
+                </Link>
+              );
+            })}
+          </nav>
+          <ThemeToggle />
+        </div>
       </div>
     </header>
   );

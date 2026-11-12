@@ -39,7 +39,7 @@ export default function BlogIndexPage() {
               <p className="text-ink-muted text-sm">{post.summary}</p>
               <div className="mt-4 flex gap-2">
                 {post.tags.map((tag) => (
-                  <span key={tag} className="pill bg-sun border-ink text-ink text-xs py-1">
+                  <span key={tag} className="pill bg-sun border-ink text-on-sun text-xs py-1">
                     {tag}
                   </span>
                 ))}

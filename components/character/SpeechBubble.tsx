@@ -9,7 +9,7 @@ import { setNavHighlight } from './navHighlight';
 const button =
   'inline-flex items-center rounded-full border-2 border-ink px-4 py-1.5 text-sm font-medium transition-all hover:-translate-y-0.5 hover:shadow-sticker';
 const primaryButton = `${button} bg-red text-white`;
-const accentButton = `${button} bg-sun text-ink`;
+const accentButton = `${button} bg-sun text-on-sun`;
 
 /** Pause after the old message fades out before the new one starts typing. */
 const SWAP_DELAY_MS = 300;

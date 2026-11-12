@@ -7,22 +7,24 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      // Bright theme. Every text/background pair used on the site meets WCAG AA:
-      // ink on cream 16.2:1, ink-muted on peach 6.5:1, red-deep on cream 6.2:1,
-      // white on red 4.7:1, ink on sun 11:1.
+      // Theme colours are CSS variables (RGB triplets) set per theme on <html> in
+      // app/globals.css: dawn, day, sunset, night. Every text/background pair used on
+      // the site meets WCAG AA in all four (checked with a contrast script).
       colors: {
-        peach: '#F6DDC3', // intro overlay + hero band
-        cream: '#FFF5EA', // page background
-        surface: '#FFFFFF', // cards, bubble, inputs
+        peach: 'rgb(var(--c-peach) / <alpha-value>)', // hero band + intro overlay
+        cream: 'rgb(var(--c-cream) / <alpha-value>)', // page background
+        surface: 'rgb(var(--c-surface) / <alpha-value>)', // cards, bubble, inputs
         ink: {
-          DEFAULT: '#1A1A1A', // body text
-          muted: '#5A4A3F', // secondary text
+          DEFAULT: 'rgb(var(--c-ink) / <alpha-value>)', // body text (light at night)
+          muted: 'rgb(var(--c-ink-muted) / <alpha-value>)', // secondary text
         },
         red: {
-          DEFAULT: '#E2231A', // hoodie red: fills (white text), borders, focus ring, large text
-          deep: '#B8150E', // red for small text (links, active nav)
+          DEFAULT: 'rgb(var(--c-red) / <alpha-value>)', // hoodie red: fills (white text), borders
+          deep: 'rgb(var(--c-red-deep) / <alpha-value>)', // red for small text (links, active nav)
         },
-        sun: '#FFC531', // fresh accent: buttons and tags, always with an ink outline
+        sun: 'rgb(var(--c-sun) / <alpha-value>)', // accent fills, always with an ink outline
+        'on-sun': 'rgb(var(--c-on-sun) / <alpha-value>)', // text on sun: dark in every theme
+        // Fixed dark palette for the TerminalHero card (same in every theme).
         night: {
           DEFAULT: '#141210', // TerminalHero card
           800: '#221E1B',
@@ -37,8 +39,8 @@ const config: Config = {
         mono: ['var(--font-mono)'],
       },
       boxShadow: {
-        sticker: '4px 4px 0 0 #1A1A1A',
-        'sticker-red': '6px 6px 0 0 #E2231A',
+        sticker: '4px 4px 0 0 rgb(var(--c-shadow))',
+        'sticker-red': '6px 6px 0 0 rgb(var(--c-red))',
       },
       keyframes: {
         caret: {

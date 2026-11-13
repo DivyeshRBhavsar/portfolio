@@ -1,0 +1,229 @@
+{
+  "slug": "h1n1-seasonal-prediction",
+  "title": "Who Gets the Flu Shot?",
+  "hook": "Predicting H1N1 and seasonal flu vaccine uptake from a national survey of 26,707 people",
+  "repo": "https://github.com/DivyeshRBhavsar/H1N1_Seasonal_Prediction",
+  "links": [
+    {
+      "label": "DrivenData competition",
+      "url": "https://www.drivendata.org/competitions/66/flu-shot-learning/"
+    }
+  ],
+  "tags": [
+    "Machine Learning",
+    "XGBoost",
+    "CatBoost",
+    "Random Forest",
+    "Optuna",
+    "scikit-learn",
+    "EDA"
+  ],
+  "featured": true,
+  "order": 2,
+  "slides": [
+    {
+      "type": "title",
+      "title": "Who Gets the Flu Shot?",
+      "subtitle": "DrivenData \"Flu Shot Learning\" competition",
+      "narration": "This one's a machine learning competition. Divyesh used a US national survey to predict who got the H1N1 flu vaccine and who got the seasonal one."
+    },
+    {
+      "type": "bullets",
+      "title": "The problem",
+      "bullets": [
+        "Data from the 2009 U.S. National H1N1 Flu Survey",
+        "Two separate yes/no targets: the H1N1 vaccine and the seasonal flu vaccine",
+        "35 features covering opinions, health behaviours, demographics and employment",
+        "Scored by ROC AUC, so each person needs a probability, not just a yes or no"
+      ],
+      "narration": "For each respondent, the model has to estimate how likely they were to get each vaccine, based on their opinions, habits and background."
+    },
+    {
+      "type": "metrics",
+      "title": "The data at a glance",
+      "metrics": [
+        {
+          "label": "Training respondents",
+          "value": "26,707"
+        },
+        {
+          "label": "Competition test respondents",
+          "value": "26,708"
+        },
+        {
+          "label": "Got the H1N1 vaccine",
+          "value": "~21%"
+        },
+        {
+          "label": "Got the seasonal vaccine",
+          "value": "~47%"
+        }
+      ],
+      "bullets": [
+        "H1N1 is imbalanced and seasonal is close to balanced, so each target is handled differently",
+        "Heavy missing data: employment occupation 50.4%, industry 49.9%, health insurance 46.0%"
+      ],
+      "narration": "Only about one in five people got the H1N1 shot, while nearly half got the seasonal one. Some columns were missing for half of all respondents."
+    },
+    {
+      "type": "bullets",
+      "title": "Missing data isn't random",
+      "bullets": [
+        "Occupation is missing for 100% of unemployed people and those not in the labour force",
+        "It's missing for only 2.4% of employed people",
+        "85.4% of respondents aged 65+ had no occupation, consistent with retirement",
+        "So the gaps were filled as \"Retired\" (age 65+) or \"Unknown\". The fact that a value is missing becomes a signal instead of being lost"
+      ],
+      "narration": "A blank occupation usually means the person isn't working. Instead of guessing, Divyesh filled the gaps in a way that keeps that meaning."
+    },
+    {
+      "type": "metrics",
+      "title": "What the statistics showed",
+      "metrics": [
+        {
+          "label": "Doctor recommendations: H1N1 ↔ seasonal (correlation)",
+          "value": "0.63"
+        },
+        {
+          "label": "Age vs. seasonal vaccine (Cramér's V)",
+          "value": "0.285"
+        },
+        {
+          "label": "Age vs. H1N1 vaccine (Cramér's V)",
+          "value": "0.051"
+        },
+        {
+          "label": "Occupation vs. H1N1 vaccine (Cramér's V)",
+          "value": "0.258"
+        }
+      ],
+      "bullets": [
+        "Chi-square and Cramér's V tests run on all 12 categorical features against both targets",
+        "Age matters a lot for the seasonal shot but barely at all for H1N1",
+        "Occupation and industry are the categorical features most strongly linked to both targets"
+      ],
+      "narration": "Age turned out to be a big driver of seasonal vaccination but almost irrelevant for H1N1. That's a good reason to model the two targets separately."
+    },
+    {
+      "type": "steps",
+      "title": "The pipeline",
+      "steps": [
+        {
+          "label": "Clean",
+          "detail": "Domain-aware filling for employment fields, IterativeImputer for numeric gaps"
+        },
+        {
+          "label": "Engineer",
+          "detail": "9 new features, e.g. combined doctor-recommendation score, household size, age × income"
+        },
+        {
+          "label": "Model",
+          "detail": "Random Forest, XGBoost and CatBoost, one model per target, on a stratified 80/20 split (21,365 / 5,342)"
+        },
+        {
+          "label": "Tune",
+          "detail": "Optuna: 50 trials per target, scored by 5-fold stratified cross-validated AUC"
+        }
+      ],
+      "narration": "The steps were: clean the data carefully, add new features, compare three model families, and then tune the best one with Optuna."
+    },
+    {
+      "type": "bars",
+      "title": "Model comparison on the hold-out set",
+      "unit": "Mean ROC AUC across both targets (higher is better)",
+      "lowerIsBetter": false,
+      "bars": [
+        {
+          "label": "Random Forest",
+          "value": 0.857
+        },
+        {
+          "label": "CatBoost",
+          "value": 0.863
+        },
+        {
+          "label": "XGBoost (default)",
+          "value": 0.864
+        },
+        {
+          "label": "XGBoost + Optuna",
+          "value": 0.864,
+          "highlight": true
+        }
+      ],
+      "metrics": [
+        {
+          "label": "Tuned H1N1 AUC",
+          "value": "0.864"
+        },
+        {
+          "label": "Tuned seasonal AUC",
+          "value": "0.864"
+        },
+        {
+          "label": "Best 5-fold CV AUC (H1N1)",
+          "value": "0.871"
+        },
+        {
+          "label": "H1N1 vaccinated people caught (recall)",
+          "value": "74%"
+        }
+      ],
+      "narration": "All three model families ended up within a hundredth of each other in AUC, and tuning added very little. That says the next gains will come from better features, not a different model."
+    },
+    {
+      "type": "bars",
+      "title": "What drives H1N1 vaccination",
+      "unit": "Random Forest feature importance",
+      "bars": [
+        {
+          "label": "Doctor recommended H1N1",
+          "value": 0.117,
+          "highlight": true
+        },
+        {
+          "label": "Perceived H1N1 risk",
+          "value": 0.09
+        },
+        {
+          "label": "Has health insurance",
+          "value": 0.073
+        },
+        {
+          "label": "Believes vaccine is effective",
+          "value": 0.07
+        },
+        {
+          "label": "Perceived seasonal flu risk",
+          "value": 0.046
+        }
+      ],
+      "bullets": [
+        "A doctor's recommendation is the single strongest predictor",
+        "Opinions about risk and vaccine effectiveness come next, ahead of demographics"
+      ],
+      "narration": "The biggest factor was simple: did a doctor recommend the vaccine? After that came how risky people thought the flu was and whether they believed the vaccine works."
+    },
+    {
+      "type": "bullets",
+      "title": "Limitations and lessons",
+      "bullets": [
+        "Scores are from an internal hold-out split, not the competition leaderboard",
+        "Label encoding treats categories as ordered numbers; one-hot or target encoding may do better",
+        "Optuna changed AUC by only about ±0.001, so model choice wasn't the bottleneck",
+        "Biggest lesson: understand why data is missing before you fill it"
+      ],
+      "narration": "He's honest about the limits. These are internal scores, the encoding could be better, and tuning hardly moved the needle. The real win came from understanding the missing data."
+    },
+    {
+      "type": "links",
+      "title": "What's next, and explore it yourself",
+      "bullets": [
+        "Next: ensemble XGBoost, CatBoost and LightGBM by averaging their probabilities",
+        "Add SHAP explanations to show the drivers for each person",
+        "The full notebook, EDA plots and statistical test results are on GitHub"
+      ],
+      "narration": "Next up are ensembling and SHAP explanations. The full notebook and every plot are on GitHub, so take a look!"
+    }
+  ]
+}

@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { X } from 'lucide-react';
-import { LUFFY_HEAD } from './introAssets';
+import LuffyHead from './LuffyHead';
 import {
   askInputLabel,
   askPanelCloseLabel,
@@ -20,7 +20,6 @@ import { fill, pick } from './speech';
 import { starterAnswers, type StarterAnswer } from './starterAnswers';
 import { useConversation, type MessageLink } from './useConversation';
 import { useFocusTrap } from './useFocusTrap';
-import type { MediaFormat } from './useStageSetup';
 import { readVisitor } from './visitorMemory';
 
 /** Messages kept on screen in the panel (it scrolls). */
@@ -28,22 +27,22 @@ const PANEL_MAX_MESSAGES = 12;
 /** Let the panel slide in before Luffy starts typing. */
 const OPEN_DELAY_MS = 250;
 
-export type PanelPlacement = 'dock' | 'stage';
+/** dock: above Mini Luffy · stage: under the home bubble · corner: bottom-right, no badge */
+export type PanelPlacement = 'dock' | 'stage' | 'corner';
 
 /**
  * The scripted Q&A panel (the AI chatbot comes later). Slides up above Mini Luffy
- * ("dock") or opens under the stage's bubble from the "Ask Luffy" chip ("stage").
+ * ("dock"), opens under the stage's bubble from the "Ask Luffy" chip ("stage"), or in
+ * the bottom-right corner on other pages ("corner", e.g. at the end of a story).
  * Either way it's a dialog: focus is trapped inside, Esc or the close button closes it.
  */
 export default function AskLuffyPanel({
   placement,
-  format,
   reducedMotion,
   onClose,
   returnFocus,
 }: {
   placement: PanelPlacement;
-  format: MediaFormat;
   reducedMotion: boolean;
   onClose: () => void;
   /** Where focus goes on close if the button that opened the panel is gone. */
@@ -91,7 +90,7 @@ export default function AskLuffyPanel({
   };
 
   const talking = busy && !reducedMotion;
-  const dock = placement === 'dock';
+  const dock = placement !== 'stage';
 
   return (
     <motion.div
@@ -106,12 +105,12 @@ export default function AskLuffyPanel({
       style={{ transformOrigin: dock ? '100% 100%' : '50% 0%' }}
       className={`${
         dock
-          ? 'fixed bottom-[5.5rem] right-4 z-[60] w-[min(22rem,calc(100vw-2rem))]'
+          ? `fixed ${placement === 'dock' ? 'bottom-[5.5rem]' : 'bottom-4'} right-4 z-[60] w-[min(22rem,calc(100vw-2rem))]`
           : 'relative mt-6 w-full max-w-md scroll-mb-6'
       } flex max-h-[min(34rem,calc(100svh-7rem))] flex-col rounded-2xl border-2 border-ink bg-surface text-left shadow-sticker outline-none`}
     >
       <div className="flex items-center gap-3 border-b-2 border-ink/10 px-4 py-3">
-        <PanelAvatar talking={talking} format={format} />
+        <LuffyHead talking={talking} />
         <h2 id={titleId} className="flex-1 font-display text-lg font-semibold text-ink">
           {askPanelTitle}
         </h2>
@@ -234,38 +233,6 @@ function AnswerLinks({ links, onFollow }: { links: MessageLink[]; onFollow: () =
         )
       )}
     </div>
-  );
-}
-
-/** luffy-head: the looping clip while he's answering, the still otherwise. */
-function PanelAvatar({ talking, format }: { talking: boolean; format: MediaFormat }) {
-  const [broken, setBroken] = useState(false);
-  const animated = talking && !broken;
-  const className = 'h-full w-full object-cover';
-  return (
-    <span className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-ink bg-sun">
-      {animated && format === 'webm' ? (
-        <video
-          src={LUFFY_HEAD.webm}
-          autoPlay
-          loop
-          muted
-          playsInline
-          aria-hidden="true"
-          className={className}
-          onError={() => setBroken(true)}
-        />
-      ) : (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={animated ? LUFFY_HEAD.webp : LUFFY_HEAD.png}
-          alt=""
-          draggable={false}
-          className={className}
-          onError={() => setBroken(true)}
-        />
-      )}
-    </span>
   );
 }
 

@@ -244,3 +244,69 @@ export const updatedLabels = {
   yesterday: "updated yesterday",
   days: "updated {days} days ago",
 };
+
+// ── 10. Projects page: list view and story mode ──────────────────────
+// {nameComma} becomes ", Priya" when the name is known, or nothing.
+
+// Story mode's picker
+export const storyPickerLines: string[] = [
+  "Which project shall we explore{nameComma}?",
+  "Pick a project{nameComma}, and I'll walk you through it! 🎬",
+  "Story time{nameComma}! Which project shall we explore?",
+];
+
+// After the last slide
+export const storyEndLines: string[] = [
+  "And that's the story! Want to see another one?",
+  "That's how he did it! Want to see another one? 🎬",
+  "The end… for now! Want to explore something else?",
+];
+
+// Narration for a slide whose narration is still a TODO
+export const storyComingSoonLines: string[] = [
+  "This part is still being written. Check back soon! ✍️",
+  "Divyesh is still putting this part together. Stay tuned! 🛠️",
+];
+
+// Home page "last time" line when the last page was a story. {lastPage} = storyPageName
+export const lastVisitStoryLines: string[] = [
+  "Last time you checked out {lastPage}.",
+  "I remember you were watching {lastPage}!",
+];
+// How a story is named in Luffy's sentences. {title} = the story's title.
+// (The "Continue" chip uses the plain title.)
+export const storyPageName = "the “{title}” story";
+
+// Buttons and screen-reader text
+export const projectsViewLabels = {
+  group: "How to view the projects",
+  list: "📋 List view",
+  story: "🎬 Story mode with Luffy",
+};
+export const watchStoryLabel = "▶ Watch the story";
+export const surpriseMeLabel = "Surprise me 🎲";
+export const storyPickerListLabel = "Project stories";
+export const comingSoonLabel = "Coming soon";
+export const storyControls = {
+  back: "Back",
+  next: "Next",
+  autoplay: "Autoplay",
+  pause: "Pause",
+  openRepo: "Open the repo ↗",
+  close: "✕ Back to projects",
+  nextProject: "Next project →",
+  askLuffy: "💬 Ask Luffy",
+  backToList: "📋 Back to list",
+};
+export const storyControlLabels = {
+  back: "Previous slide",
+  next: "Next slide",
+  autoplay: "Start autoplay",
+  pause: "Pause autoplay",
+  dots: "Slides",
+  dot: "Go to slide {n}",
+  openRepo: "Open the repo on GitHub (opens in a new tab)",
+  close: "Close the story and go back to the projects",
+};
+export const slideCounterLabel = "Slide {n} of {total}";
+export const storyRegionLabel = "Project story: {title}";

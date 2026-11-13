@@ -4,10 +4,20 @@ import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { blogPostFallbackName, blogPostName, pageNames } from './luffyLines';
 import { fill } from './speech';
-import { beginSession, recordPage } from './visitorMemory';
+import { beginSession, recordPage, type VisitedPage } from './visitorMemory';
 
 /** Blog posts render their title in the page's <h1> (there's no per-post <title>). */
 const TITLE_READ_DELAY_MS = 300;
+
+function pageFor(path: string): VisitedPage | null {
+  // Project stories: the player marks its title with data-visit-label.
+  if (path.startsWith('/projects/')) {
+    const title = document.querySelector('[data-visit-label]')?.getAttribute('data-visit-label');
+    return title ? { path, label: title, kind: 'story' } : null;
+  }
+  const label = labelFor(path);
+  return label ? { path, label } : null;
+}
 
 function labelFor(path: string): string | null {
   if (pageNames[path]) return pageNames[path];
@@ -27,8 +37,8 @@ export default function VisitTracker() {
     if (pathname === '/') return;
     // Wait for the new page's content (client navigation commits it after this runs).
     const timer = setTimeout(() => {
-      const label = labelFor(pathname);
-      if (label) recordPage({ path: pathname, label });
+      const page = pageFor(pathname);
+      if (page) recordPage(page);
     }, TITLE_READ_DELAY_MS);
     return () => clearTimeout(timer);
   }, [pathname]);

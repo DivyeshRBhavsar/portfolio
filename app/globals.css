@@ -229,6 +229,26 @@ html[data-stage] body {
   padding-bottom: 6rem;
 }
 
+/* ---------- Projects page: list view / story mode ----------
+   <html data-projects-view> is set before first paint (components/projects/viewStore.ts),
+   so the saved view shows at once. Default (no attribute): the list. */
+.projects-story-view {
+  display: none;
+}
+html[data-projects-view='story'] .projects-story-view {
+  display: block;
+}
+html[data-projects-view='story'] .projects-list-view {
+  display: none;
+}
+.projects-view-btn {
+  @apply border-2 border-transparent text-ink hover:bg-sun/40;
+}
+html:not([data-projects-view='story']) .projects-view-btn[data-view='list'],
+html[data-projects-view='story'] .projects-view-btn[data-view='story'] {
+  @apply border-ink bg-sun text-on-sun hover:bg-sun;
+}
+
 html[data-stage-failsafe] .stage-loading,
 html[data-stage-failsafe] .stage-dim,
 html[data-stage-failsafe] .stage-skip-intro {

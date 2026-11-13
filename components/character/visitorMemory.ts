@@ -3,7 +3,8 @@
  * across visits, sessionStorage for this visit. Every access is wrapped in try/catch;
  * with storage blocked, every visit simply counts as new.
  *
- * localStorage   luffy-visitor   { name?, firstVisit, lastVisit, pages[], quiet? }
+ * localStorage   luffy-visitor   { name?, firstVisit, lastVisit, pages[], quiet?, stories? }
+ *                luffy-projects-view  'list' or 'story' (components/projects)
  *                luffy-theme     header toggle (components/theme)
  * sessionStorage luffy-session   { type, lastPage }  fixed at the first page of the visit
  *                luffy-home-seen '1' once the home stage has run this visit
@@ -19,7 +20,16 @@ const STORAGE_PREFIX = 'luffy-';
 export const NAME_MAX_LENGTH = 30;
 const MAX_PAGES = 3;
 
-export type VisitedPage = { path: string; label: string };
+export type VisitedPage = {
+  path: string;
+  /** "Projects", "post “…”", or a story's plain title. */
+  label: string;
+  /** A project story (/projects/<slug>): Luffy's sentence uses storyPageName. */
+  kind?: 'story';
+};
+
+/** The last slide a visitor viewed in a story (1-based), and whether it was the last one. */
+export type StoryProgress = { slide: number; finished: boolean };
 
 export type VisitorRecord = {
   name?: string;
@@ -30,6 +40,8 @@ export type VisitorRecord = {
   pages: VisitedPage[];
   /** Set by "Skip to portfolio": the stage starts collapsed, with Mini Luffy docked. */
   quiet?: boolean;
+  /** Per story slug: where "Continue" resumes. */
+  stories?: Record<string, StoryProgress>;
 };
 
 export type VisitorType = 'new' | 'returning';
@@ -68,7 +80,25 @@ const session = () => window.sessionStorage;
 
 function isPage(value: unknown): value is VisitedPage {
   const page = value as VisitedPage;
-  return !!page && typeof page.path === 'string' && typeof page.label === 'string';
+  return (
+    !!page &&
+    typeof page.path === 'string' &&
+    page.path.startsWith('/') &&
+    typeof page.label === 'string' &&
+    (page.kind === undefined || page.kind === 'story')
+  );
+}
+
+function readProgress(value: unknown): Record<string, StoryProgress> | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const result: Record<string, StoryProgress> = {};
+  for (const [slug, entry] of Object.entries(value as Record<string, unknown>)) {
+    const p = entry as StoryProgress;
+    if (p && Number.isInteger(p.slide) && p.slide >= 1 && typeof p.finished === 'boolean') {
+      result[slug] = { slide: p.slide, finished: p.finished };
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
 }
 
 /** Read and sanity-check the stored record (it's user-editable, so trust nothing). */
@@ -82,6 +112,7 @@ export function readVisitor(): VisitorRecord | null {
     lastVisit: typeof data.lastVisit === 'string' ? data.lastVisit : data.firstVisit,
     pages: Array.isArray(data.pages) ? data.pages.filter(isPage).slice(0, MAX_PAGES) : [],
     quiet: data.quiet === true,
+    stories: readProgress(data.stories),
   };
 }
 
@@ -155,6 +186,27 @@ export function takeTipTurn(): boolean {
   } catch {
     return true;
   }
+}
+
+/** Remember where the visitor is in a story (for the home page's "Continue"). */
+export function saveStoryProgress(slug: string, slide: number, total: number): void {
+  const record = readVisitor();
+  if (!record) return;
+  const stories = { ...record.stories, [slug]: { slide, finished: slide >= total } };
+  writeVisitor({ ...record, stories });
+}
+
+/**
+ * Where "Continue" should open a page: a story resumes at the last slide viewed, or
+ * from the start if the visitor reached the end.
+ */
+export function continuePath(page: VisitedPage): string {
+  if (page.kind !== 'story') return page.path;
+  const slug = page.path.split('/').pop() ?? '';
+  const progress = readVisitor()?.stories?.[slug];
+  return progress && !progress.finished && progress.slide > 1
+    ? `${page.path}#${progress.slide}`
+    : page.path;
 }
 
 export function readHomeSeen(): boolean {

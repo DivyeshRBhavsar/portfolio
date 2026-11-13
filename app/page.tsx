@@ -5,6 +5,7 @@ import Reveal from '@/components/Reveal';
 import HomeStage from '@/components/character/HomeStage';
 import { getAllPosts } from '@/lib/posts';
 import { getCurrentRepo } from '@/lib/github';
+import { getStories, storiesByRepoId } from '@/lib/stories';
 
 const competencies = [
   { title: 'Data Analysis', items: ['SQL & Snowflake', 'Power BI & Tableau', 'Data quality automation'] },
@@ -17,11 +18,14 @@ export default async function HomePage() {
   const latestPostHref = latestPosts[0] ? `/blog/${latestPosts[0].slug}` : '/blog';
   // "Currently working on" badge; null (badge hidden) if GitHub fails. Cached for an hour.
   const currentRepo = await getCurrentRepo();
+  const currentStory = currentRepo
+    ? ((await storiesByRepoId(getStories(), [currentRepo]))[currentRepo.id] ?? null)
+    : null;
 
   return (
     <div>
       {/* Luffy's stage: welcome, lights up, conversation. */}
-      <HomeStage latestPostHref={latestPostHref} currentRepo={currentRepo} />
+      <HomeStage latestPostHref={latestPostHref} currentRepo={currentRepo} currentStory={currentStory} />
 
       {/* First section below the stage: Tour and "Skip to portfolio" scroll here. */}
       <section

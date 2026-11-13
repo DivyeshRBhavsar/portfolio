@@ -1,7 +1,9 @@
 'use client';
 
 import { useSyncExternalStore } from 'react';
+import Link from 'next/link';
 import type { CurrentRepo } from '@/lib/github';
+import { storyPath, type StorySummary } from '@/lib/storyTypes';
 import { currentlyWorkingLabel, updatedLabels } from './luffyLines';
 import { fill } from './speech';
 
@@ -31,21 +33,40 @@ function updatedText(pushedAt: string, minute: number): string | null {
   return fill(updatedLabels.days, { days: String(days) });
 }
 
-/** "🔨 Currently working on: repo · updated 3 days ago", under Luffy's bubble. */
-export default function WorkingOnBadge({ repo }: { repo: CurrentRepo }) {
+/**
+ * "🔨 Currently working on: repo · updated 3 days ago", under Luffy's bubble. With a
+ * project story: "…: Story title (repo) · updated …", the title opening the story.
+ */
+export default function WorkingOnBadge({
+  repo,
+  story = null,
+}: {
+  repo: CurrentRepo;
+  story?: StorySummary | null;
+}) {
   const minute = useSyncExternalStore(subscribe, getMinute, getServerMinute);
   const updated = minute === null ? null : updatedText(repo.pushedAt, minute);
 
   return (
     <p className="flex flex-wrap items-center justify-center gap-x-1.5 gap-y-1 text-center text-sm text-ink-muted">
       <span>{currentlyWorkingLabel}</span>
+      {story && (
+        <Link
+          href={storyPath(story.slug)}
+          className="font-medium text-ink underline decoration-ink/30 underline-offset-4 hover:decoration-red-deep"
+        >
+          {story.title}
+        </Link>
+      )}
       <a
         href={repo.htmlUrl}
         target="_blank"
         rel="noopener noreferrer"
         className="font-mono font-medium text-red-deep underline-offset-4 hover:underline"
       >
+        {story ? <span aria-hidden="true">(</span> : null}
         {repo.name}
+        {story ? <span aria-hidden="true">)</span> : null}
       </a>
       {updated && (
         <>

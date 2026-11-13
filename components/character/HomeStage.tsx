@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react
 import { useRouter } from 'next/navigation';
 import { motion } from 'motion/react';
 import type { CurrentRepo } from '@/lib/github';
+import type { StorySummary } from '@/lib/storyTypes';
 import StageBackdrop from '@/components/theme/StageBackdrop';
 import { applyMode } from '@/components/theme/themeStore';
 import AskLuffyPanel, { type PanelPlacement } from './AskLuffyPanel';
@@ -40,6 +41,7 @@ import {
   intentQuestionNew,
   intentQuestionReturning,
   lastVisitLines,
+  lastVisitStoryLines,
   nameSkippedLines,
   nameThanksLines,
   newVisitorGreetings,
@@ -49,6 +51,7 @@ import {
   skipIntroLabel,
   skipToPortfolioLabel,
   stageLabel,
+  storyPageName,
   weekendLines,
 } from './luffyLines';
 import { fill, isWeekend, pick, timeSlot, timeZoneLine } from './speech';
@@ -58,6 +61,7 @@ import { useReactionClips } from './useReactionClips';
 import { useStageSetup, type StageSetup } from './useStageSetup';
 import {
   beginSession,
+  continuePath,
   forgetEverything,
   markHomeSeen,
   saveName,
@@ -105,10 +109,13 @@ function isIntro(phase: Phase): boolean {
 export default function HomeStage({
   latestPostHref,
   currentRepo,
+  currentStory,
 }: {
   latestPostHref: string;
   /** "Currently working on" (null when GitHub failed: the badge is hidden). */
   currentRepo: CurrentRepo | null;
+  /** The current repo's project story, if it has one. */
+  currentStory: StorySummary | null;
 }) {
   const router = useRouter();
   const stageRef = useRef<HTMLElement>(null);
@@ -212,7 +219,12 @@ export default function HomeStage({
           : pick(returningNoNameGreetings[slot]),
       ];
       const previous = current.session.lastPage;
-      if (previous) lines.push(fill(pick(lastVisitLines), { lastPage: previous.label }));
+      if (previous?.kind === 'story') {
+        const storyName = fill(storyPageName, { title: previous.label });
+        lines.push(fill(pick(lastVisitStoryLines), { lastPage: storyName }));
+      } else if (previous) {
+        lines.push(fill(pick(lastVisitLines), { lastPage: previous.label }));
+      }
       lines.push(pick(intentQuestionReturning));
       say(lines, 'chips', instantRef.current);
     },
@@ -525,7 +537,8 @@ export default function HomeStage({
                 {
                   key: 'continue',
                   label: fill(chipLabels.continue, { lastPage: lastPage.label }),
-                  onSelect: go(lastPage.path),
+                  // Read at click time: a story resumes at the last slide viewed.
+                  onSelect: () => go(continuePath(lastPage))(),
                 },
               ]
             : []),
@@ -605,7 +618,7 @@ export default function HomeStage({
               <button type="button" onClick={replayWelcome} className={cornerButton}>
                 {replayWelcomeLabel}
               </button>
-              {currentRepo && <WorkingOnBadge repo={currentRepo} />}
+              {currentRepo && <WorkingOnBadge repo={currentRepo} story={currentStory} />}
             </div>
           </div>
         )}
@@ -668,7 +681,6 @@ export default function HomeStage({
               {panel === 'stage' && (
                 <AskLuffyPanel
                   placement="stage"
-                  format={format}
                   reducedMotion={reducedMotion}
                   onClose={closePanel}
                   returnFocus={() => bubbleRef.current}
@@ -682,7 +694,7 @@ export default function HomeStage({
                   transition={{ duration: 0.6, delay: animate ? 0.4 : 0 }}
                   className="mt-8"
                 >
-                  <WorkingOnBadge repo={currentRepo} />
+                  <WorkingOnBadge repo={currentRepo} story={currentStory} />
                 </motion.div>
               )}
             </div>
@@ -730,7 +742,6 @@ export default function HomeStage({
       {panel === 'dock' && (
         <AskLuffyPanel
           placement="dock"
-          format={format}
           reducedMotion={reducedMotion}
           onClose={closePanel}
           returnFocus={() => miniButtonRef.current}

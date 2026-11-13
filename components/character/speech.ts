@@ -15,13 +15,27 @@ import {
 
 export type Placeholders = Partial<
   Record<
-    'name' | 'visitorTime' | 'divyeshTime' | 'city' | 'lastPage' | 'nameComma' | 'title' | 'days',
+    | 'name'
+    | 'visitorTime'
+    | 'divyeshTime'
+    | 'city'
+    | 'lastPage'
+    | 'nameComma'
+    | 'title'
+    | 'days'
+    | 'n'
+    | 'total',
     string
   >
 >;
 
 export function pick<T>(list: readonly T[]): T {
   return list[Math.floor(Math.random() * list.length)];
+}
+
+/** ", Priya" when the visitor's name is known, or nothing (for {nameComma}). */
+export function nameComma(name: string | undefined): string {
+  return name ? `, ${name}` : '';
 }
 
 /** Fill {placeholders}; unknown ones become empty. */

@@ -14,7 +14,10 @@ import {
  */
 
 export type Placeholders = Partial<
-  Record<'name' | 'visitorTime' | 'divyeshTime' | 'city' | 'lastPage' | 'nameComma' | 'title', string>
+  Record<
+    'name' | 'visitorTime' | 'divyeshTime' | 'city' | 'lastPage' | 'nameComma' | 'title' | 'days',
+    string
+  >
 >;
 
 export function pick<T>(list: readonly T[]): T {

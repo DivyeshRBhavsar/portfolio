@@ -224,3 +224,23 @@ export const pageNames: Record<string, string> = {
 export const blogPostName = "post “{title}”";
 export const blogPostFallbackName = "blog";
 export const stageLabel = "Meet Luffy, Divyesh's guide";
+
+// ── 9. Skip to portfolio, Mini Luffy, Ask Luffy panel, working-on badge ──
+// Buttons and screen-reader text. Edit freely.
+
+export const replayWelcomeLabel = "Replay welcome 👋";
+export const miniLuffyLabel = "Ask Luffy a question";
+export const askPanelTitle = "Ask Luffy";
+export const askPanelCloseLabel = "Close";
+export const starterQuestionsLabel = "Questions you can ask";
+export const askInputLabel = "Ask anything (coming soon)";
+export const askSendLabel = "Send";
+export const visitorSaidLabel = "You:";
+export const luffySaidLabel = "Luffy:";
+
+// After currentlyWorkingLabel and the repo name. {days} = number of days
+export const updatedLabels = {
+  today: "updated today",
+  yesterday: "updated yesterday",
+  days: "updated {days} days ago",
+};

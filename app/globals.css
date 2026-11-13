@@ -134,7 +134,7 @@ html.theme-transition {
 
 /* ---------- Home stage ----------
    <html data-stage> is set before first paint by STAGE_SCRIPT, then by HomeStage:
-   welcome (loading + clip) · lights (coming up) · chat. Failsafe: the loading screen and
+   welcome (loading + clip) · lights (coming up) · chat · quiet (collapsed). Failsafe: the loading screen and
    dim layer remove themselves 10 s after they appear (CSS only, works even if React
    crashed), and the inline script's timer sets data-stage-failsafe, which unlocks
    scrolling. Keep the 10s here in step with STAGE_FAILSAFE_MS (introAssets.ts). */
@@ -206,6 +206,27 @@ html[data-stage='lights'] .stage-dim {
 }
 html[data-stage='welcome'] .stage-skip-intro {
   display: inline-flex;
+}
+
+/* Quiet mode ("Skip to portfolio", remembered): the stage is a short band with
+   "Replay welcome", and Mini Luffy is docked. Before React loads, both versions are in
+   the HTML and this picks one (after that, React shows Mini Luffy, also whenever the
+   stage is scrolled out of view). */
+.stage-collapsed,
+.mini-luffy {
+  display: none;
+}
+html[data-stage='quiet'] .stage-collapsed,
+html[data-stage='quiet'] .mini-luffy {
+  display: block;
+}
+html[data-stage='quiet'] .stage-full {
+  display: none;
+}
+/* The home page (the only one with data-stage): room at the bottom, so Mini Luffy
+   never covers a button there. */
+html[data-stage] body {
+  padding-bottom: 6rem;
 }
 
 html[data-stage-failsafe] .stage-loading,

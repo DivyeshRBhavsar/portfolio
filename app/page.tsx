@@ -4,6 +4,7 @@ import TerminalHero from '@/components/TerminalHero';
 import Reveal from '@/components/Reveal';
 import HomeStage from '@/components/character/HomeStage';
 import { getAllPosts } from '@/lib/posts';
+import { getCurrentRepo } from '@/lib/github';
 
 const competencies = [
   { title: 'Data Analysis', items: ['SQL & Snowflake', 'Power BI & Tableau', 'Data quality automation'] },
@@ -11,17 +12,23 @@ const competencies = [
   { title: 'Engineering', items: ['Python, Docker', 'CI/CD, GitHub Actions', 'AWS Cloud Practitioner'] },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
   const latestPosts = getAllPosts().slice(0, 3);
   const latestPostHref = latestPosts[0] ? `/blog/${latestPosts[0].slug}` : '/blog';
+  // "Currently working on" badge; null (badge hidden) if GitHub fails. Cached for an hour.
+  const currentRepo = await getCurrentRepo();
 
   return (
     <div>
       {/* Luffy's stage: welcome, lights up, conversation. */}
-      <HomeStage latestPostHref={latestPostHref} />
+      <HomeStage latestPostHref={latestPostHref} currentRepo={currentRepo} />
 
       {/* First section below the stage: Tour and "Skip to portfolio" scroll here. */}
-      <section id="about" className="scroll-mt-20 max-w-5xl mx-auto px-6 pt-16 sm:pt-20">
+      <section
+        id="about"
+        tabIndex={-1}
+        className="scroll-mt-20 max-w-5xl mx-auto px-6 pt-16 sm:pt-20 outline-none"
+      >
         <p className="font-mono text-sm text-red-deep mb-3">Data Analyst · AI Resident @ Apziva</p>
         <h1 className="font-display text-4xl sm:text-5xl font-bold leading-tight text-ink">
           Divyesh Bhavsar

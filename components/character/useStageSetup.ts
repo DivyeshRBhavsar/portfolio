@@ -19,6 +19,8 @@ export type StageSetup = {
   sameVisit: boolean;
   session: SessionInfo;
   name: string;
+  /** "Skip to portfolio" was used before: start collapsed, Mini Luffy docked. */
+  quiet: boolean;
 };
 
 function prefersReducedMotion(): boolean {
@@ -67,6 +69,10 @@ export function useStageSetup(onSetup: (setup: StageSetup) => void): StageSetup 
   useLayoutEffect(() => {
     // Page load: the script already decided (and started its failsafe clock).
     if (document.documentElement.hasAttribute('data-stage')) return;
+    if (readVisitor()?.quiet) {
+      setStageAttr('quiet');
+      return;
+    }
     const welcome = !readHomeSeen() && !prefersReducedMotion();
     setStageAttr(welcome ? 'welcome' : 'chat');
     if (welcome) armFailsafe();
@@ -85,6 +91,7 @@ export function useStageSetup(onSetup: (setup: StageSetup) => void): StageSetup 
         sameVisit,
         session: beginSession(),
         name: readVisitor()?.name ?? '',
+        quiet: readVisitor()?.quiet === true,
       };
       setSetup(next);
       onSetupRef.current(next);

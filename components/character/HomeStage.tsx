@@ -2,17 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'motion/react';
+import type { CurrentRepo } from '@/lib/github';
 import StageBackdrop from '@/components/theme/StageBackdrop';
 import { applyMode } from '@/components/theme/themeStore';
+import AskLuffyPanel, { type PanelPlacement } from './AskLuffyPanel';
 import CharacterFigure from './CharacterFigure';
 import ChatBubble from './ChatBubble';
 import IdleCharacter from './IdleCharacter';
 import IntentChips, { type Chip } from './IntentChips';
 import LoadingScreen from './LoadingScreen';
+import MiniLuffy from './MiniLuffy';
 import NameForm from './NameForm';
 import ReactionLayer from './ReactionLayer';
 import Spotlight from './Spotlight';
 import WelcomeClip, { type WelcomeVariant } from './WelcomeClip';
+import WorkingOnBadge from './WorkingOnBadge';
 import { setHeader } from './headerState';
 import {
   CLIPS,
@@ -26,7 +31,7 @@ import {
   type ClipName,
 } from './introAssets';
 import { logStep } from './introDebug';
-import { armFailsafe, disarmFailsafe, setStageAttr } from './introGuard';
+import { armFailsafe, disarmFailsafe, setStageAttr, type StageAttr } from './introGuard';
 import {
   askNameLines,
   chipLabels,
@@ -38,6 +43,7 @@ import {
   nameSkippedLines,
   nameThanksLines,
   newVisitorGreetings,
+  replayWelcomeLabel,
   returningGreetings,
   returningNoNameGreetings,
   skipIntroLabel,
@@ -55,6 +61,7 @@ import {
   forgetEverything,
   markHomeSeen,
   saveName,
+  setQuiet,
   type VisitedPage,
 } from './visitorMemory';
 
@@ -64,14 +71,25 @@ import {
  * welcome → spotlight, clip playing, header hidden, scrolling locked
  * lights  → spotlight widens, background and header fade in (1.2 s)
  * chat    → the conversation
+ * quiet   → "Skip to portfolio" (now or on an earlier visit): stage collapsed to a band
+ *           with "Replay welcome 👋", Mini Luffy docked bottom-right
  */
-type Phase = 'pending' | 'loading' | 'welcome' | 'lights' | 'chat';
+type Phase = 'pending' | 'loading' | 'welcome' | 'lights' | 'chat' | 'quiet';
 
 /** Which conversation runs: full new-visitor one, returning one, or same-visit chips only. */
 type Script = 'new' | 'returning' | 'same';
 
 /** The first section below the stage: Tour and Skip to portfolio scroll here. */
 const CONTENT_ID = 'about';
+
+/**
+ * Mini Luffy shows when less than ~20% of the stage is on screen. Two thresholds (out
+ * below 15%, back above 25%) plus a short settle time stop it flickering while the
+ * visitor scrolls slowly around the edge.
+ */
+const STAGE_OUT_BELOW = 0.15;
+const STAGE_BACK_ABOVE = 0.25;
+const STAGE_SETTLE_MS = 150;
 
 const cornerButton =
   'rounded-full border-2 border-ink bg-surface px-3 py-1.5 font-mono text-xs text-ink transition-colors hover:bg-sun hover:text-on-sun sm:text-sm';
@@ -84,11 +102,19 @@ function isIntro(phase: Phase): boolean {
  * The home page's centred stage: Luffy's welcome, the lights coming up, and the
  * chat-style conversation. All text comes from luffyLines.ts.
  */
-export default function HomeStage({ latestPostHref }: { latestPostHref: string }) {
+export default function HomeStage({
+  latestPostHref,
+  currentRepo,
+}: {
+  latestPostHref: string;
+  /** "Currently working on" (null when GitHub failed: the badge is hidden). */
+  currentRepo: CurrentRepo | null;
+}) {
   const router = useRouter();
   const stageRef = useRef<HTMLElement>(null);
   const figureRef = useRef<HTMLDivElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
+  const miniButtonRef = useRef<HTMLButtonElement>(null);
 
   const [phaseOverride, setPhaseOverride] = useState<Phase | null>(null);
   const [welcomeStartedAt, setWelcomeStartedAt] = useState<number | null>(null);
@@ -99,6 +125,10 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
   const [lastPage, setLastPage] = useState<VisitedPage | null>(null);
   /** Messages appear at once (reduced motion, same-visit). */
   const [instant, setInstant] = useState(false);
+  /** The Ask Luffy panel: above Mini Luffy, or under the bubble (from the chip). */
+  const [panel, setPanel] = useState<PanelPlacement | null>(null);
+  /** The stage is scrolled (mostly) out of view: Mini Luffy shows. Not saved. */
+  const [stageOut, setStageOut] = useState(false);
 
   const setupRef = useRef<StageSetup | null>(null);
   const phaseRef = useRef<Phase>('pending');
@@ -117,9 +147,15 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
   const setup = useStageSetup(handleSetup);
 
   const reducedMotion = setup?.reducedMotion ?? false;
-  const welcomeMode = setup !== null && !setup.reducedMotion && !setup.sameVisit;
-  const phase: Phase =
-    phaseOverride ?? (setup ? (welcomeMode ? 'loading' : 'chat') : 'pending');
+  const welcomeMode = setup !== null && !setup.quiet && !setup.reducedMotion && !setup.sameVisit;
+  const initialPhase: Phase = !setup
+    ? 'pending'
+    : setup.quiet
+      ? 'quiet'
+      : welcomeMode
+        ? 'loading'
+        : 'chat';
+  const phase: Phase = phaseOverride ?? initialPhase;
   const variant: WelcomeVariant =
     setup?.session.type === 'returning' ? 'welcomeShort' : 'welcome';
   const format = setup?.format ?? 'webm';
@@ -133,7 +169,10 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
   const reactions = useReactionClips({ format, enabled: setup !== null && !reducedMotion });
   const { play: playClip } = reactions;
   const conversation = useConversation({
-    onMessageStart: useCallback(() => playClip(MESSAGE_TALK_CLIP), [playClip]),
+    // Clips stay paused while the stage is out of view (the chat itself carries on).
+    onMessageStart: useCallback(() => {
+      if (stageVisible.current) playClip(MESSAGE_TALK_CLIP);
+    }, [playClip]),
   });
   const { say, clearPrompt, reset: resetConversation } = conversation;
 
@@ -204,11 +243,28 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
     setPhaseOverride('welcome');
   }, []);
 
+  /** Decode the still now, so the swap from the clip's last frame is instant. */
+  const prepareWelcome = useCallback(() => {
+    ready.current = { clip: false, still: false };
+    const still = new Image();
+    still.src = NEUTRAL_POSE;
+    const done = () => {
+      ready.current.still = true;
+      maybeStartWelcome();
+    };
+    still.decode().then(done, done);
+  }, [maybeStartWelcome]);
+
   useEffect(() => {
     onSetupRef.current = (next: StageSetup) => {
       setupRef.current = next;
+      logStep(
+        'setup',
+        `${next.format}, ${next.session.type}${next.sameVisit ? ', same visit' : ''}${next.quiet ? ', quiet' : ''}`
+      );
+      // Quiet mode (saved, or "Skip to portfolio" clicked before this point): nothing runs.
+      if (next.quiet || phaseRef.current === 'quiet') return;
       const welcome = !next.reducedMotion && !next.sameVisit;
-      logStep('setup', `${next.format}, ${next.session.type}${next.sameVisit ? ', same visit' : ''}`);
       if (!welcome) {
         startConversationOnce();
         return;
@@ -218,16 +274,9 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
         toLights('skipped before setup');
         return;
       }
-      // Decode the still now, so the swap from the clip's last frame is instant.
-      const still = new Image();
-      still.src = NEUTRAL_POSE;
-      const done = () => {
-        ready.current.still = true;
-        maybeStartWelcome();
-      };
-      still.decode().then(done, done);
+      prepareWelcome();
     };
-  }, [maybeStartWelcome, startConversationOnce, toLights]);
+  }, [prepareWelcome, startConversationOnce, toLights]);
 
   const handleClipReady = useCallback(
     (ok: boolean) => {
@@ -253,7 +302,8 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
   // <html data-stage> follows the phase (CSS: header, scroll lock, overlays).
   useEffect(() => {
     if (phase === 'pending') return;
-    setStageAttr(phase === 'lights' || phase === 'chat' ? phase : 'welcome');
+    const attr: StageAttr = phase === 'loading' || phase === 'welcome' ? 'welcome' : phase;
+    setStageAttr(attr);
   }, [phase]);
 
   // Leaving the home page: never leave the header hidden or scrolling locked.
@@ -341,12 +391,62 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
     });
   }, [reducedMotion]);
 
-  // Part B: skip the intro and scroll down. (Collapse + Mini Luffy come in Part C.)
+  /**
+   * Stop everything, collapse the stage, dock Mini Luffy, scroll to the content, and
+   * remember it (quiet mode) so the next visit starts this way.
+   */
   const skipToPortfolio = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
+    logStep('skip to portfolio', phaseRef.current);
     choose();
-    if (isIntro(phaseRef.current)) requestSkip('skip to portfolio');
-    requestAnimationFrame(scrollToContent);
+    setQuiet(true);
+    disarmFailsafe();
+    reactions.stop();
+    resetConversation();
+    conversationStarted.current = true; // nothing starts behind the collapsed stage
+    setPanel(null);
+    phaseRef.current = 'quiet';
+    setPhaseOverride('quiet');
+    setStageAttr('quiet'); // right away: overlays gone, scrolling unlocked
+    // After the collapse has laid out, so the target position is final. Keyboard focus
+    // follows (the link that had it is gone).
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        scrollToContent();
+        document.getElementById(CONTENT_ID)?.focus({ preventScroll: true });
+      })
+    );
+  };
+
+  /** "Replay welcome 👋": clear quiet mode and run the stage again from the welcome. */
+  const replayWelcome = () => {
+    const current = setupRef.current;
+    if (!current) return;
+    logStep('replay welcome');
+    setQuiet(false);
+    setPanel(null);
+    reactions.stop();
+    resetConversation();
+    conversationStarted.current = false;
+    skipRequested.current = false;
+    nudged.current = false;
+    firstChoiceMade.current = false;
+    setupRef.current = { ...current, quiet: false, sameVisit: false };
+    setWelcomeStartedAt(null);
+    setLoadingGone(false);
+
+    if (current.reducedMotion) {
+      // No welcome clip: straight to the conversation.
+      phaseRef.current = 'chat';
+      setPhaseOverride('chat');
+      startConversationOnce();
+      return;
+    }
+    phaseRef.current = 'loading';
+    setPhaseOverride('loading');
+    setStageAttr('welcome');
+    armFailsafe();
+    prepareWelcome();
   };
 
   /* ---------- Answers ---------- */
@@ -399,11 +499,15 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
     scrollToContent();
   };
 
-  // The Q&A panel arrives in Part C.
+  // The same panel as Mini Luffy's, opened under the bubble.
   const askLuffy = () => {
     choose();
-    logStep('ask luffy', 'Q&A panel comes in Part C');
+    logStep('ask luffy', 'stage');
+    setPanel('stage');
   };
+
+  const closePanel = useCallback(() => setPanel(null), []);
+  const toggleDockPanel = () => setPanel((open) => (open === 'dock' ? null : 'dock'));
 
   const chips: Chip[] =
     chipSet === 'new'
@@ -432,21 +536,35 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
 
   /* ---------- Idle ---------- */
 
+  // How much of the stage is on screen: pauses clips and nudges, and shows Mini Luffy.
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return;
+    let settle: ReturnType<typeof setTimeout> | undefined;
     const observer = new IntersectionObserver(
       ([entry]) => {
-        stageVisible.current = entry.isIntersecting;
+        const ratio = entry.isIntersecting ? entry.intersectionRatio : 0;
+        // Between the two thresholds: keep whatever it was.
+        const out = ratio < STAGE_OUT_BELOW ? true : ratio > STAGE_BACK_ABOVE ? false : null;
+        if (out === null) return;
+        clearTimeout(settle);
+        settle = setTimeout(() => {
+          stageVisible.current = !out;
+          setStageOut(out);
+        }, STAGE_SETTLE_MS);
       },
-      { threshold: 0.3 }
+      { threshold: [0, 0.1, STAGE_OUT_BELOW, 0.2, STAGE_BACK_ABOVE, 0.3, 0.5, 1] }
     );
     observer.observe(stage);
-    return () => observer.disconnect();
+    return () => {
+      clearTimeout(settle);
+      observer.disconnect();
+    };
   }, []);
 
   useIdle({
-    enabled: phase === 'chat' && conversation.prompt !== null && !conversation.busy,
+    enabled:
+      phase === 'chat' && panel === null && conversation.prompt !== null && !conversation.busy,
     onIdle: () => {
       if (!stageVisible.current) return; // reading further down: leave them be
       playClip('waiting');
@@ -470,88 +588,154 @@ export default function HomeStage({ latestPostHref }: { latestPostHref: string }
     setup !== null && !reducedMotion && (phase === 'welcome' || phase === 'lights' || phase === 'chat');
   const showBubble = conversation.visible.length > 0 || conversation.prompt !== null;
   const animate = !instant;
+  const quiet = phase === 'quiet';
+  // Before setup both are in the HTML; <html data-stage> (set before paint) picks one.
+  const showCollapsed = phase === 'pending' || quiet;
+  // Quiet mode, scrolled past the stage (after the intro), or its own panel open.
+  const miniVisible = quiet || panel === 'dock' || (stageOut && phase === 'chat');
 
   return (
-    <section ref={stageRef} aria-label={stageLabel} className="relative overflow-hidden bg-peach">
-      <StageBackdrop />
+    <>
+      <section ref={stageRef} aria-label={stageLabel} className="relative overflow-hidden bg-peach">
+        <StageBackdrop />
 
-      <div className="relative mx-auto flex min-h-[calc(100svh-4.5rem)] max-w-3xl flex-col items-center px-4 pb-14 pt-16 sm:pt-20">
-        <div ref={figureRef} className="w-[min(56vw,230px)] sm:w-[280px]">
-          <CharacterFigure floating={floating}>
-            <IdleCharacter animate={floating} hidden={stillHidden} />
-            {setup && (phase === 'loading' || phase === 'welcome') && (
-              <WelcomeClip
-                format={setup.format}
-                variant={variant}
-                play={phase === 'welcome'}
-                onReady={handleClipReady}
-                onStarted={handleWelcomeStarted}
-                onEnded={handleWelcomeEnded}
-              />
-            )}
-            {showReactions && (
-              <ReactionLayer
-                format={format}
-                preload={preload}
-                current={reactions.current}
-                onPlaying={reactions.handlePlaying}
-                onEnded={reactions.handleEnded}
-                onError={reactions.handleError}
-              />
-            )}
-          </CharacterFigure>
-        </div>
+        {showCollapsed && (
+          <div className="stage-collapsed relative">
+            <div className="mx-auto flex max-w-3xl flex-col items-center gap-4 px-4 py-7 sm:flex-row sm:justify-center sm:gap-6">
+              <button type="button" onClick={replayWelcome} className={cornerButton}>
+                {replayWelcomeLabel}
+              </button>
+              {currentRepo && <WorkingOnBadge repo={currentRepo} />}
+            </div>
+          </div>
+        )}
 
-        <div ref={bubbleRef} tabIndex={-1} className="mt-6 w-full max-w-md outline-none">
-          {showBubble && (
-            <ChatBubble
-              messages={conversation.visible}
-              announced={conversation.log}
-              animate={animate}
-              footer={
-                script === 'returning' && (
-                  <button
-                    type="button"
-                    onClick={forgetMe}
-                    className="mx-auto mt-4 block text-xs text-ink-muted underline underline-offset-4 hover:text-red-deep"
+        {!quiet && (
+          <div className="stage-full">
+            <div className="relative mx-auto flex min-h-[calc(100svh-4.5rem)] max-w-3xl flex-col items-center px-4 pb-14 pt-16 sm:pt-20">
+              <div ref={figureRef} className="w-[min(56vw,230px)] sm:w-[280px]">
+                <CharacterFigure floating={floating}>
+                  <IdleCharacter animate={floating} hidden={stillHidden} />
+                  {setup && (phase === 'loading' || phase === 'welcome') && (
+                    <WelcomeClip
+                      format={setup.format}
+                      variant={variant}
+                      play={phase === 'welcome'}
+                      onReady={handleClipReady}
+                      onStarted={handleWelcomeStarted}
+                      onEnded={handleWelcomeEnded}
+                    />
+                  )}
+                  {showReactions && (
+                    <ReactionLayer
+                      format={format}
+                      preload={preload}
+                      current={reactions.current}
+                      onPlaying={reactions.handlePlaying}
+                      onEnded={reactions.handleEnded}
+                      onError={reactions.handleError}
+                    />
+                  )}
+                </CharacterFigure>
+              </div>
+
+              <div ref={bubbleRef} tabIndex={-1} className="mt-6 w-full max-w-md outline-none">
+                {showBubble && (
+                  <ChatBubble
+                    messages={conversation.visible}
+                    announced={conversation.log}
+                    animate={animate}
+                    footer={
+                      script === 'returning' && (
+                        <button
+                          type="button"
+                          onClick={forgetMe}
+                          className="mx-auto mt-4 block text-xs text-ink-muted underline underline-offset-4 hover:text-red-deep"
+                        >
+                          {forgetMeLabel}
+                        </button>
+                      )
+                    }
                   >
-                    {forgetMeLabel}
-                  </button>
-                )
-              }
-            >
-              {conversation.prompt === 'name' && (
-                <NameForm onSubmit={handleName} onSkip={handleNameSkip} />
+                    {conversation.prompt === 'name' && (
+                      <NameForm onSubmit={handleName} onSkip={handleNameSkip} />
+                    )}
+                    {conversation.prompt === 'chips' && <IntentChips chips={chips} animate={animate} />}
+                  </ChatBubble>
+                )}
+              </div>
+
+              {panel === 'stage' && (
+                <AskLuffyPanel
+                  placement="stage"
+                  format={format}
+                  reducedMotion={reducedMotion}
+                  onClose={closePanel}
+                  returnFocus={() => bubbleRef.current}
+                />
               )}
-              {conversation.prompt === 'chips' && <IntentChips chips={chips} animate={animate} />}
-            </ChatBubble>
-          )}
-        </div>
-      </div>
 
-      {/* Above the dim layer and the loading screen, clickable from the very start. */}
-      <a href={`#${CONTENT_ID}`} onClick={skipToPortfolio} className={`${cornerButton} absolute left-4 top-4 z-[71]`}>
-        {skipToPortfolioLabel}
-      </a>
-      {intro && (
-        <button
-          type="button"
-          onClick={skipIntro}
-          className={`${cornerButton} stage-skip-intro absolute right-4 top-4 z-[71]`}
-        >
-          {skipIntroLabel}
-        </button>
-      )}
+              {currentRepo && phase === 'chat' && (
+                <motion.div
+                  initial={animate ? { opacity: 0 } : false}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: animate ? 0.4 : 0 }}
+                  className="mt-8"
+                >
+                  <WorkingOnBadge repo={currentRepo} />
+                </motion.div>
+              )}
+            </div>
 
-      {(intro || phase === 'lights') && (
-        <Spotlight key={welcomeStartedAt ?? 0} up={phase === 'lights'} target={figureRef} />
-      )}
-      {!loadingGone && (intro || phase === 'lights') && (
-        <LoadingScreen
-          done={phase !== 'pending' && phase !== 'loading'}
-          onGone={handleLoadingGone}
+            {/* Above the dim layer and the loading screen, clickable from the very start. */}
+            <a
+              href={`#${CONTENT_ID}`}
+              onClick={skipToPortfolio}
+              className={`${cornerButton} absolute left-4 top-4 z-[71]`}
+            >
+              {skipToPortfolioLabel}
+            </a>
+            {intro && (
+              <button
+                type="button"
+                onClick={skipIntro}
+                className={`${cornerButton} stage-skip-intro absolute right-4 top-4 z-[71]`}
+              >
+                {skipIntroLabel}
+              </button>
+            )}
+
+            {(intro || phase === 'lights') && (
+              <Spotlight key={welcomeStartedAt ?? 0} up={phase === 'lights'} target={figureRef} />
+            )}
+            {!loadingGone && (intro || phase === 'lights') && (
+              <LoadingScreen
+                done={phase !== 'pending' && phase !== 'loading'}
+                onGone={handleLoadingGone}
+              />
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* Rendered before setup too, so a quiet-mode visitor sees it from the first paint. */}
+      <MiniLuffy
+        visible={miniVisible}
+        beforeSetup={phase === 'pending'}
+        open={panel === 'dock'}
+        onToggle={toggleDockPanel}
+        buttonRef={miniButtonRef}
+        reducedMotion={reducedMotion}
+      />
+      {panel === 'dock' && (
+        <AskLuffyPanel
+          placement="dock"
+          format={format}
+          reducedMotion={reducedMotion}
+          onClose={closePanel}
+          returnFocus={() => miniButtonRef.current}
         />
       )}
-    </section>
+    </>
   );
 }

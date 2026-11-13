@@ -7,11 +7,13 @@
  *                luffy-theme     header toggle (components/theme)
  * sessionStorage luffy-session   { type, lastPage }  fixed at the first page of the visit
  *                luffy-home-seen '1' once the home stage has run this visit
+ *                luffy-tip-seen  '1' once Mini Luffy's tooltip has shown this visit
  */
 
 export const VISITOR_KEY = 'luffy-visitor';
 export const SESSION_KEY = 'luffy-session';
 export const HOME_SEEN_KEY = 'luffy-home-seen';
+const TIP_SEEN_KEY = 'luffy-tip-seen';
 const STORAGE_PREFIX = 'luffy-';
 
 export const NAME_MAX_LENGTH = 30;
@@ -26,7 +28,7 @@ export type VisitorRecord = {
   lastVisit: string;
   /** Most recent first. */
   pages: VisitedPage[];
-  /** Set by "Skip to portfolio" (Part C). */
+  /** Set by "Skip to portfolio": the stage starts collapsed, with Mini Luffy docked. */
   quiet?: boolean;
 };
 
@@ -134,6 +136,25 @@ export function recordPage(page: VisitedPage): void {
   if (!record) return;
   const pages = [page, ...record.pages.filter((p) => p.path !== page.path)].slice(0, MAX_PAGES);
   writeVisitor({ ...record, pages });
+}
+
+/** Quiet mode on ("Skip to portfolio") or off ("Replay welcome"). */
+export function setQuiet(quiet: boolean): void {
+  beginSession(); // makes sure there's a record to save it in
+  const record = readVisitor();
+  if (!record) return;
+  writeVisitor({ ...record, quiet: quiet || undefined }); // undefined is left out of the JSON
+}
+
+/** Mini Luffy's tooltip shows once per visit. Returns true the first time only. */
+export function takeTipTurn(): boolean {
+  try {
+    if (session().getItem(TIP_SEEN_KEY) === '1') return false;
+    session().setItem(TIP_SEEN_KEY, '1');
+    return true;
+  } catch {
+    return true;
+  }
 }
 
 export function readHomeSeen(): boolean {

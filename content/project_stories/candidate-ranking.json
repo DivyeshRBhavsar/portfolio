@@ -1,0 +1,145 @@
+{
+  "slug": "candidate-ranking",
+  "title": "From Headline to Hiring Signal",
+  "hook": "Teaching a 3B language model to score candidates like a recruiter, and to say when it isn't sure",
+  "repo": "https://github.com/DivyeshRBhavsar/120J1xTr0fpjvfEI",
+  "links": [
+    { "label": "Model on Hugging Face", "url": "https://huggingface.co/DivyeshBhavsar10/qwen2.5-3b-candidate-scorer-qlora" }
+  ],
+  "tags": ["NLP", "Qwen2.5-3B", "QLoRA", "RAG", "FAISS", "ChromaDB", "PyTorch"],
+  "featured": true,
+  "order": 1,
+  "slides": [
+    {
+      "type": "title",
+      "title": "From Headline to Hiring Signal",
+      "subtitle": "A real client project, built with Apziva as an AI Resident",
+      "narration": "This one's a real client project! Divyesh taught a language model to score job candidates the way a recruiter does. Let me show you how."
+    },
+    {
+      "type": "bullets",
+      "title": "The problem",
+      "bullets": [
+        "A talent sourcing firm finds people for technology companies",
+        "Recruiters search with keywords that change for every role, then review every profile by hand",
+        "The best fit is often not at the top of the list; it might be the 7th",
+        "The goal: understand candidates, score their fit, rank them, and learn from reviewers"
+      ],
+      "narration": "Recruiters were reviewing every profile by hand, and the best person was often buried halfway down the list. The firm wanted a system that understands and ranks candidates."
+    },
+    {
+      "type": "steps",
+      "title": "Three stages, three skills",
+      "steps": [
+        { "label": "Read", "detail": "A few-shot LLM turns messy profile text into clean, structured JSON" },
+        { "label": "Judge", "detail": "Qwen2.5-3B is fine-tuned with QLoRA to predict the reviewers' 0–100 screening score" },
+        { "label": "Know its limits", "detail": "Retrieval over past candidates calibrates each score, explains it, and flags unsure cases" }
+      ],
+      "narration": "He built it in three stages: first the model learns to read profiles, then to judge them, and finally to know when it's out of its depth."
+    },
+    {
+      "type": "metrics",
+      "title": "Stage 1: Teaching the machine to read",
+      "metrics": [
+        { "label": "Candidates extracted", "value": "1,266" },
+        { "label": "JSON parse errors", "value": "0" },
+        { "label": "Distinct job titles after normalising", "value": "260" },
+        { "label": "Job title filled", "value": "94.1%" }
+      ],
+      "bullets": [
+        "Abbreviations normalised (\"HR\" → \"human resources\") so keyword search works",
+        "Told never to invent missing information",
+        "Batched 25 per call with per-row retry for malformed JSON"
+      ],
+      "narration": "Every one of the 1,266 profiles came out as clean JSON with zero parsing errors, and job titles were normalised so the same role always has the same name."
+    },
+    {
+      "type": "metrics",
+      "title": "Stage 2: Teaching the machine to judge",
+      "metrics": [
+        { "label": "Parameters trained", "value": "0.96%" },
+        { "label": "Base model", "value": "3.1B" },
+        { "label": "Quantisation", "value": "4-bit NF4" },
+        { "label": "Train / val / test", "value": "886 / 190 / 190" }
+      ],
+      "bullets": [
+        "QLoRA: the base model stays frozen in 4-bit; small LoRA adapters (rank 16) learn",
+        "A regression head predicts the score directly",
+        "Trained on MAE, the same metric it's evaluated on",
+        "Split stratified by job title, so every role is represented fairly"
+      ],
+      "narration": "Fine-tuning a 3-billion-parameter model on free Kaggle GPUs? QLoRA made it possible by training less than one percent of the weights."
+    },
+    {
+      "type": "bars",
+      "title": "Results on the untouched test set",
+      "unit": "Mean absolute error (lower is better)",
+      "lowerIsBetter": true,
+      "bars": [
+        { "label": "Always predict the average", "value": 30.25 },
+        { "label": "TF-IDF + Ridge (validation)", "value": 22.91 },
+        { "label": "QLoRA Qwen2.5-3B", "value": 16.57, "highlight": true }
+      ],
+      "metrics": [
+        { "label": "Error cut vs. baseline", "value": "~45%" },
+        { "label": "Spearman ρ (ranking agreement)", "value": "0.548" }
+      ],
+      "narration": "The fine-tuned model cut the error by about 45 percent, and it ranks candidates in much the same order the reviewers did. That ranking is what matters most for a shortlist."
+    },
+    {
+      "type": "bars",
+      "title": "What the model actually learned",
+      "unit": "How much the error grows when a field is shuffled",
+      "bars": [
+        { "label": "Location", "value": 7.32, "highlight": true },
+        { "label": "Job title", "value": 5.26 },
+        { "label": "Experience", "value": 1.06 },
+        { "label": "Education", "value": 0.80 },
+        { "label": "Other info", "value": 0.71 }
+      ],
+      "bullets": [
+        "Reviewer scores are two-tiered: 20–40 or 80–100, with nobody between 40 and 60",
+        "Location turned out to be the strongest signal of all"
+      ],
+      "narration": "He didn't stop at the score. Taking the model apart showed reviewers sorted people into strong and weak, and that location mattered more than anything else. That's worth auditing."
+    },
+    {
+      "type": "metrics",
+      "title": "Stage 3: Knowing what it doesn't know",
+      "metrics": [
+        { "label": "Best blend (model : neighbours)", "value": "80 : 20" },
+        { "label": "Spearman ρ with retrieval", "value": "0.577" },
+        { "label": "RMSE trimmed", "value": "~3%" },
+        { "label": "Test candidates flagged as unusual", "value": "1 of 190" }
+      ],
+      "bullets": [
+        "Finds the 5 most similar past candidates and blends their scores with the model's",
+        "Embeddings come from the fine-tuned model itself, in the same forward pass",
+        "Built twice to compare: FAISS (speed) and ChromaDB (metadata filters)",
+        "Every score comes with evidence a recruiter can check"
+      ],
+      "narration": "Retrieval here isn't about writing text. It calibrates the score, shows the recruiter similar past candidates as evidence, and flags the cases a human should look at closely."
+    },
+    {
+      "type": "bullets",
+      "title": "Responsible use",
+      "bullets": [
+        "Decision support, never automatic rejection: every candidate is still reviewed by a person",
+        "Location can act as a proxy for things that must not influence hiring, so it's the first thing to audit",
+        "Small, imbalanced data: 260 titles, most with only a handful of examples",
+        "The client's candidate data is private and not in the repository"
+      ],
+      "narration": "He's upfront about the limits: it's a helper for reviewers, not a decision maker, and the location finding needs auditing before any real-world use."
+    },
+    {
+      "type": "links",
+      "title": "What's next, and try it yourself",
+      "bullets": [
+        "Next: when a reviewer stars the ideal candidate, re-rank the list around that choice",
+        "Biggest lesson: look at the label distribution before choosing a loss",
+        "The trained adapter is public on Hugging Face; all notebooks are on GitHub"
+      ],
+      "narration": "Next up is the starring feature, so every review makes the list smarter. The model and notebooks are public, so you can try it yourself!"
+    }
+  ]
+}

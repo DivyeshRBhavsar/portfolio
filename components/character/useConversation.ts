@@ -11,7 +11,18 @@ import {
 /** What waits for the visitor once Luffy has finished talking. */
 export type Prompt = 'name' | 'chips' | null;
 
-type Message = { id: number; text: string };
+export type MessageLink = { label: string; href: string };
+
+/** What Luffy says: plain text, or text with link buttons shown once it's typed. */
+export type Line = string | { text: string; links?: MessageLink[] };
+
+type Message = {
+  id: number;
+  text: string;
+  /** Visitor messages (the Q&A panel's questions) appear at once, never typed. */
+  from: 'luffy' | 'visitor';
+  links?: MessageLink[];
+};
 
 type Active = { message: Message; phase: 'dots' | 'typing' | 'done'; typed: number };
 
@@ -29,6 +40,8 @@ type State = {
 export type VisibleMessage = {
   id: number;
   text: string;
+  from: 'luffy' | 'visitor';
+  links?: MessageLink[];
   /** What's typed so far (the full text once done). */
   shown: string;
   state: 'dots' | 'typing' | 'done';
@@ -56,10 +69,13 @@ function advance(state: State): State {
  */
 export function useConversation({
   onMessageStart,
+  maxVisible = MAX_VISIBLE_MESSAGES,
 }: {
   /** A message is about to type (Luffy's talking clip). */
-  onMessageStart: () => void;
-}) {
+  onMessageStart?: () => void;
+  /** How many messages stay on screen (the stage bubble shows 3). */
+  maxVisible?: number;
+} = {}) {
   const [state, setState] = useState<State>(EMPTY);
   const stateRef = useRef(state);
   const nextId = useRef(1);
@@ -73,7 +89,7 @@ export function useConversation({
     stateRef.current = next;
     setState(next);
     if (next.active && next.active.message.id !== previous.active?.message.id) {
-      onStartRef.current();
+      onStartRef.current?.();
     }
   }, []);
 
@@ -82,8 +98,12 @@ export function useConversation({
    * prompt on screen, for idle nudges). `instant` skips the typing.
    */
   const say = useCallback(
-    (lines: string[], then: Prompt | 'keep' = null, instant = false) => {
-      const messages = lines.map((text) => ({ id: nextId.current++, text }));
+    (lines: Line[], then: Prompt | 'keep' = null, instant = false) => {
+      const messages: Message[] = lines.map((line) => ({
+        id: nextId.current++,
+        from: 'luffy',
+        ...(typeof line === 'string' ? { text: line } : line),
+      }));
       const current = stateRef.current;
       const prompt = then === 'keep' ? current.prompt : null;
       const pendingPrompt = then === 'keep' ? current.pendingPrompt : then;
@@ -91,7 +111,7 @@ export function useConversation({
       if (instant) {
         commit({
           ...current,
-          log: [...current.log, ...messages].slice(-MAX_VISIBLE_MESSAGES),
+          log: [...current.log, ...messages].slice(-maxVisible),
           prompt: then === 'keep' ? current.prompt : then,
           pendingPrompt: null,
         });
@@ -99,7 +119,17 @@ export function useConversation({
       }
       commit(advance({ ...current, queue: [...current.queue, ...messages], prompt, pendingPrompt }));
     },
-    [commit]
+    [commit, maxVisible]
+  );
+
+  /** The visitor's own message (a picked question), shown at once. Call when not busy. */
+  const addVisitorMessage = useCallback(
+    (text: string) => {
+      const current = stateRef.current;
+      const message: Message = { id: nextId.current++, text, from: 'visitor' };
+      commit({ ...current, log: [...current.log, message].slice(-maxVisible) });
+    },
+    [commit, maxVisible]
   );
 
   /** The visitor answered: hide the prompt until Luffy asks something again. */
@@ -149,16 +179,18 @@ export function useConversation({
         advance({
           ...current,
           active: null,
-          log: [...current.log, active.message].slice(-MAX_VISIBLE_MESSAGES),
+          log: [...current.log, active.message].slice(-maxVisible),
         })
       );
     }, MESSAGE_GAP_MS);
     return () => clearTimeout(timer);
-  }, [phase, activeId, commit]);
+  }, [phase, activeId, commit, maxVisible]);
 
   const visible: VisibleMessage[] = state.log.map((m) => ({
     id: m.id,
     text: m.text,
+    from: m.from,
+    links: m.links,
     shown: m.text,
     state: 'done' as const,
   }));
@@ -167,19 +199,22 @@ export function useConversation({
     visible.push({
       id: message.id,
       text: message.text,
+      from: message.from,
+      links: message.links,
       shown: activePhase === 'dots' ? '' : message.text.slice(0, typed),
       state: activePhase,
     });
   }
 
   return {
-    visible: visible.slice(-MAX_VISIBLE_MESSAGES),
+    visible: visible.slice(-maxVisible),
     /** Finished messages, for the screen-reader live region. */
     log: state.log,
     prompt: state.prompt,
     /** Luffy is still talking (or has more queued). */
     busy: state.active !== null || state.queue.length > 0,
     say,
+    addVisitorMessage,
     clearPrompt,
     reset,
   };

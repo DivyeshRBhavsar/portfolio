@@ -1,7 +1,7 @@
 // Plain module (no 'use client') so the server-rendered root layout can import the script.
 
 import { STAGE_FAILSAFE_MS } from './introAssets';
-import { HOME_SEEN_KEY } from './visitorMemory';
+import { HOME_SEEN_KEY, VISITOR_KEY } from './visitorMemory';
 
 export const REDUCED_QUERY = '(prefers-reduced-motion: reduce)';
 
@@ -10,9 +10,10 @@ export const REDUCED_QUERY = '(prefers-reduced-motion: reduce)';
  *   welcome → loading screen allowed, spotlight dim, header hidden, scrolling locked
  *   lights  → spotlight widening, header fading in
  *   chat    → normal page
+ *   quiet   → stage collapsed to a band with "Replay welcome", Mini Luffy docked
  * <html data-stage-failsafe> → the loading screen and dim layer are gone for good.
  */
-export type StageAttr = 'welcome' | 'lights' | 'chat';
+export type StageAttr = 'welcome' | 'lights' | 'chat' | 'quiet';
 
 declare global {
   interface Window {
@@ -23,12 +24,12 @@ declare global {
 
 /**
  * Inline at the top of <body> (app/layout.tsx), so it runs before the stage's markup.
- * On the home page it picks the stage's starting state, so nothing flashes before React
- * loads. It also owns the failsafe: if the welcome is still holding the page after 10 s
+ * On the home page it picks the stage's starting state (quiet mode first, then same
+ * visit or reduced motion → chat, else welcome), so nothing flashes before React loads. It also owns the failsafe: if the welcome is still holding the page after 10 s
  * (counted from page load, re-armed when the clip starts), it unlocks scrolling and
  * removes the overlays, without needing React.
  */
-export const STAGE_SCRIPT = `(function(){var d=document.documentElement,t;function release(){if(d.getAttribute('data-stage')!=='chat')d.setAttribute('data-stage','chat');d.setAttribute('data-stage-failsafe','')}window.__luffyStage={arm:function(ms){clearTimeout(t);d.removeAttribute('data-stage-failsafe');t=setTimeout(release,ms)},disarm:function(){clearTimeout(t)}};if(location.pathname!=='/')return;var m='welcome';try{if(matchMedia('${REDUCED_QUERY}').matches||sessionStorage.getItem('${HOME_SEEN_KEY}')==='1')m='chat'}catch(e){}d.setAttribute('data-stage',m);if(m==='welcome')window.__luffyStage.arm(${STAGE_FAILSAFE_MS})})()`;
+export const STAGE_SCRIPT = `(function(){var d=document.documentElement,t;function release(){var s=d.getAttribute('data-stage');if(s!=='chat'&&s!=='quiet')d.setAttribute('data-stage','chat');d.setAttribute('data-stage-failsafe','')}window.__luffyStage={arm:function(ms){clearTimeout(t);d.removeAttribute('data-stage-failsafe');t=setTimeout(release,ms)},disarm:function(){clearTimeout(t)}};if(location.pathname!=='/')return;var m='welcome';try{var v=JSON.parse(localStorage.getItem('${VISITOR_KEY}')||'null');if(v&&v.quiet===true)m='quiet';else if(matchMedia('${REDUCED_QUERY}').matches||sessionStorage.getItem('${HOME_SEEN_KEY}')==='1')m='chat'}catch(e){}d.setAttribute('data-stage',m);if(m==='welcome')window.__luffyStage.arm(${STAGE_FAILSAFE_MS})})()`;
 
 export function setStageAttr(stage: StageAttr | null): void {
   const root = document.documentElement;

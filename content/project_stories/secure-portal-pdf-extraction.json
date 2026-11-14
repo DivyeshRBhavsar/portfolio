@@ -1,0 +1,88 @@
+{
+  "slug": "secure-portal-pdf-extraction",
+  "title": "From Locked Portal to Clean Data",
+  "hook": "A one-click tool that logs in to a secure, OTP-protected portal, downloads every policy report, and turns the PDFs into clean CSVs",
+  "repo": "https://github.com/DivyeshRBhavsar/Secure-Portal-PDF-Data-Extraction-System",
+  "links": [],
+  "tags": ["Automation", "Playwright", "pdfplumber", "Streamlit", "Python", "pytest", "GitHub Actions"],
+  "featured": false,
+  "order": 5,
+  "slides": [
+    {
+      "type": "title",
+      "title": "From Locked Portal to Clean Data",
+      "subtitle": "An automated PDF data pipeline for an insurance client",
+      "narration": "This is a data engineering project for a real client. Divyesh automated a job that used to mean downloading and copying insurance reports by hand."
+    },
+    {
+      "type": "bullets",
+      "title": "The problem",
+      "bullets": [
+        "The client's policy reports are PDFs inside a secure portal protected by OTP login",
+        "Every report had to be downloaded and copied into spreadsheets by hand",
+        "This was slow, prone to mistakes, and impossible to keep up to date",
+        "The goal: an automated pipeline that produces clean data for a BI dashboard"
+      ],
+      "narration": "All the data was locked inside PDF reports in a secure portal, so getting it out meant hours of manual downloading and copying."
+    },
+    {
+      "type": "steps",
+      "title": "How the pipeline works",
+      "steps": [
+        { "label": "Log in", "detail": "The user signs in once in a real browser, including the OTP. Playwright saves the session for later runs" },
+        { "label": "Collect", "detail": "Playwright searches the policies, pages through the results, opens each policy, generates its report and saves the PDF" },
+        { "label": "Extract", "detail": "pdfplumber and rule-based parsing pull structured fields from each PDF, detecting Life or General policy layouts" },
+        { "label": "Store", "detail": "Each policy number gets one CSV row, so re-runs update rows instead of adding duplicates" }
+      ],
+      "narration": "A person handles only the secure login. After that, the pipeline browses the portal, collects every report, reads each one, and keeps the data organised."
+    },
+    {
+      "type": "metrics",
+      "title": "What gets extracted",
+      "metrics": [
+        { "label": "Life policy fields", "value": "19" },
+        { "label": "General policy fields", "value": "13" },
+        { "label": "Duplicate rows", "value": "0" },
+        { "label": "Clicks to refresh", "value": "1" }
+      ],
+      "bullets": [
+        "Life policies: coverage amounts, status, premium schedule, owner and insured details",
+        "General policies: deposits, withdrawals, market value, maturity date and owner contact details",
+        "Handles more than one layout for the same field, and validates that required fields are present"
+      ],
+      "narration": "Every report becomes one clean row, with up to nineteen fields per policy, and the dataset never contains duplicates."
+    },
+    {
+      "type": "bullets",
+      "title": "Built for non-technical users",
+      "bullets": [
+        "A Streamlit app with three buttons: Login, Refresh New Policies, and Re-Check All",
+        "Incremental mode skips policies already downloaded, while a full re-check rebuilds everything",
+        "Download all the PDFs and CSVs as one timestamped ZIP",
+        "A one-click Windows launcher sets up the environment and starts the app"
+      ],
+      "narration": "The client doesn't need to know any Python. They click a button, and the data refreshes."
+    },
+    {
+      "type": "bullets",
+      "title": "Security and reliability",
+      "bullets": [
+        "No credentials in code: the password and OTP are entered by a person in the browser",
+        "Session files, settings and all extracted data are kept out of git",
+        "An expired session is detected, and the app prompts the user to log in again",
+        "pytest runs on generated sample PDFs in GitHub Actions on every push"
+      ],
+      "narration": "Because this touches personal financial data, security came first. Nothing sensitive goes into the code or the repository, and automated tests check the extraction on every change."
+    },
+    {
+      "type": "links",
+      "title": "Lessons and what's next",
+      "bullets": [
+        "Biggest lesson: real-world PDFs have many layouts, so the parsing rules need fallbacks and validation",
+        "Next: feed the CSVs into an interactive BI dashboard for ongoing monitoring",
+        "The code, tests and synthetic sample data are on GitHub"
+      ],
+      "narration": "The trickiest part was that the same field could appear in different places across reports. The code and sample data are on GitHub, so you can explore it yourself."
+    }
+  ]
+}

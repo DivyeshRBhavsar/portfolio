@@ -1,0 +1,201 @@
+{
+  "slug": "term-deposit-calling-model",
+  "title": "Call Smarter, Not More",
+  "hook": "A two-layer model that cuts a 40,000-customer call list to 8,589 and raises conversion from 7.2% to 31.7%",
+  "repo": "https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY",
+  "links": [],
+  "tags": [
+    "Machine Learning",
+    "XGBoost",
+    "CatBoost",
+    "Stacking",
+    "UMAP",
+    "Clustering",
+    "Power BI"
+  ],
+  "featured": true,
+  "order": 3,
+  "slides": [
+    {
+      "type": "title",
+      "title": "Call Smarter, Not More",
+      "subtitle": "A two-layer calling model for a term deposit marketing campaign",
+      "narration": "A bank wants to sell term deposits by phone, but most people say no. Divyesh built a system that works out who is actually worth calling."
+    },
+    {
+      "type": "bullets",
+      "title": "The problem",
+      "bullets": [
+        "40,000 customers on the marketing list, and only 2,896 (7.2%) subscribed",
+        "Calling everyone wastes hours on people who were never going to say yes",
+        "Calling too few misses real subscribers",
+        "The goal: keep almost every real subscriber while removing as many wasted calls as possible"
+      ],
+      "narration": "Fewer than one in thirteen customers said yes. The challenge was to cut the wasted calls without losing the people who would have subscribed."
+    },
+    {
+      "type": "steps",
+      "title": "A funnel, not a single model",
+      "steps": [
+        {
+          "label": "Screen",
+          "detail": "Layer 1 uses only information known before any contact to remove obvious no's cheaply"
+        },
+        {
+          "label": "Refine",
+          "detail": "Layer 2 adds contact history (campaign contacts, call duration) to sharpen the list"
+        },
+        {
+          "label": "Prioritise",
+          "detail": "Clustering splits the final list into segments, so the best ones get called first"
+        }
+      ],
+      "narration": "Rather than one big model, he built a funnel. Each stage only uses information that would actually be available at that point in a real campaign."
+    },
+    {
+      "type": "metrics",
+      "title": "Layer 1: Cold screening",
+      "metrics": [
+        {
+          "label": "Stack test AUC",
+          "value": "0.729"
+        },
+        {
+          "label": "Subscribers kept (test set)",
+          "value": "92.1%"
+        },
+        {
+          "label": "Wasted calls removed",
+          "value": "9,110"
+        },
+        {
+          "label": "Calling time saved",
+          "value": "~560 hrs"
+        }
+      ],
+      "bullets": [
+        "Logistic Regression + CatBoost, blended by a meta-learner trained on 5-fold out-of-fold predictions",
+        "Only 7 pre-contact features: day, month, contact channel, age, marital status, balance, housing",
+        "Full list: 40,000 → 30,777 customers, losing only 113 real subscribers (3.9%)"
+      ],
+      "narration": "With only basic customer details, the first layer removed over nine thousand calls that would have been wasted. That's about 560 hours of calling time, or 70 working days."
+    },
+    {
+      "type": "metrics",
+      "title": "Layer 2: Informed refinement",
+      "metrics": [
+        {
+          "label": "5-fold CV AUC",
+          "value": "0.9405 ± 0.0034"
+        },
+        {
+          "label": "Test AUC",
+          "value": "0.9414"
+        },
+        {
+          "label": "Subscribers kept (test set)",
+          "value": "96.2%"
+        },
+        {
+          "label": "Precision (test set)",
+          "value": "30.4%"
+        }
+      ],
+      "bullets": [
+        "XGBoost on Layer 1's 30,777 customers, with 13 features including campaign contacts and call duration",
+        "Threshold 0.28: the highest recall that keeps precision at or above 30%",
+        "Removed 78% of the remaining wasted calls on the test set, missing 21 of 557 subscribers",
+        "Final list: 30,777 → 8,589 customers"
+      ],
+      "narration": "Once contact history is available, the second layer becomes far more accurate. It removed almost four out of five remaining wasted calls and still kept 96 percent of subscribers."
+    },
+    {
+      "type": "bars",
+      "title": "The funnel, end to end",
+      "unit": "Conversion rate of the call list (%)",
+      "lowerIsBetter": false,
+      "bars": [
+        {
+          "label": "Raw list (40,000)",
+          "value": 7.2
+        },
+        {
+          "label": "After Layer 1 (30,777)",
+          "value": 9.0
+        },
+        {
+          "label": "After Layer 2 (8,589)",
+          "value": 31.7,
+          "highlight": true
+        }
+      ],
+      "metrics": [
+        {
+          "label": "More subscribers per call",
+          "value": "~4.4×"
+        },
+        {
+          "label": "Real subscribers still on the list",
+          "value": "94.0%"
+        }
+      ],
+      "narration": "Overall, the call list went from about one yes in fourteen to nearly one in three, while still holding on to 94 percent of every real subscriber."
+    },
+    {
+      "type": "bars",
+      "title": "Who to call first",
+      "unit": "Conversion rate by customer segment (%)",
+      "bars": [
+        {
+          "label": "Cluster 2: divorced managers, March",
+          "value": 42.9,
+          "highlight": true
+        },
+        {
+          "label": "Cluster 0: retired, June",
+          "value": 37.2
+        },
+        {
+          "label": "Cluster 6: married managers, August",
+          "value": 34.1
+        },
+        {
+          "label": "Final list average",
+          "value": 31.7
+        },
+        {
+          "label": "Cluster 1: blue-collar, May (largest)",
+          "value": 26.9
+        }
+      ],
+      "bullets": [
+        "UMAP + Ward hierarchical clustering on the final 8,589 customers, k = 2–10 scanned",
+        "Best silhouette score: 0.699 at k = 10",
+        "Segments with 150+ customers cover 98.7% of the list"
+      ],
+      "narration": "Even within the final list, some groups convert much better than others. Calling the strongest segments first gets more subscribers from the same number of calls."
+    },
+    {
+      "type": "bullets",
+      "title": "Limitations",
+      "bullets": [
+        "The original goal of 80% yes-recall and 50% no-recall at the same time was not reachable at any threshold, so the chosen threshold is a compromise",
+        "Call duration is the strongest Layer 2 feature, but it's only known after a call, so Layer 2 suits follow-up rounds rather than first contact",
+        "Pool-level numbers include training rows, so the test-set numbers are the fair benchmark",
+        "The best k was at the edge of the scanned range, so the 10 segments are a starting point"
+      ],
+      "narration": "He's upfront about the limits. The original targets turned out to be impossible to hit together, and the second layer relies on information you only get after a call."
+    },
+    {
+      "type": "links",
+      "title": "What's next, and explore it yourself",
+      "bullets": [
+        "Next: widen the clustering scan to k = 15–20 to confirm the right number of segments",
+        "Built a companion Power BI dashboard that shows the payoff in hours and working days saved",
+        "Biggest lesson: decide which features are fair to use at each stage before building the model",
+        "All three notebooks are on GitHub"
+      ],
+      "narration": "The notebooks are all on GitHub. The biggest lesson was to think about when each piece of information is actually available before modelling with it."
+    }
+  ]
+}

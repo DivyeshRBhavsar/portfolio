@@ -1,0 +1,147 @@
+{
+  "slug": "customer-happiness",
+  "title": "Two Moments, Two Models",
+  "hook": "Spotting unhappy delivery customers from a six-question survey by pairing two models that each read a different moment of the journey",
+  "repo": "https://github.com/DivyeshRBhavsar/UXQuJpm6fj5xoNLi",
+  "links": [],
+  "tags": ["Machine Learning", "Random Forest", "KNN", "Ensembles", "Statistics", "scikit-learn"],
+  "featured": true,
+  "order": 4,
+  "slides": [
+    {
+      "type": "title",
+      "title": "Two Moments, Two Models",
+      "subtitle": "Customer happiness prediction for a logistics and delivery startup",
+      "narration": "A fast-growing delivery startup wanted to know which customers are unhappy before they leave. Divyesh found that happiness depends on two different moments, and built a model for each."
+    },
+    {
+      "type": "bullets",
+      "title": "The problem",
+      "bullets": [
+        "A customer survey with six statements, each rated 1 to 5: on-time delivery, contents as expected, ordered everything wanted, good price, courier, and app",
+        "Target: is the customer happy or unhappy?",
+        "Main goal: catch as many unhappy customers as possible (unhappy recall)",
+        "Constraint: still recognise at least 64% of happy customers"
+      ],
+      "narration": "The aim was to catch unhappy customers early, without wrongly flagging lots of happy ones along the way."
+    },
+    {
+      "type": "metrics",
+      "title": "The data at a glance",
+      "metrics": [
+        { "label": "Survey responses", "value": "126" },
+        { "label": "Happy / unhappy", "value": "54.8% / 45.2%" },
+        { "label": "Training / test rows", "value": "100 / 26" },
+        { "label": "Missing values", "value": "0" }
+      ],
+      "bullets": [
+        "A very small dataset, so every result needs careful checking",
+        "50-fold repeated stratified cross-validation on the training set"
+      ],
+      "narration": "Only 126 responses, which is tiny. That shaped every decision: with this little data, it's easy to fool yourself, so he checked results with cross-validation too."
+    },
+    {
+      "type": "bars",
+      "title": "Which questions carry signal?",
+      "unit": "Votes from three independent checks (point-biserial correlation, chi-square, Random Forest importance)",
+      "bars": [
+        { "label": "X1: delivered on time", "value": 3, "highlight": true },
+        { "label": "X5: satisfied with courier", "value": 2 },
+        { "label": "X3: ordered everything wanted", "value": 1 },
+        { "label": "X2: contents as expected", "value": 1 },
+        { "label": "X4: good price", "value": 0 },
+        { "label": "X6: app is easy", "value": 0 }
+      ],
+      "bullets": [
+        "Price and app got no votes from any check, so they were dropped",
+        "On-time delivery was the only question significant in all three checks"
+      ],
+      "narration": "The first finding was a business one: price and the app weren't what drove happiness. Delivery timing and the courier were."
+    },
+    {
+      "type": "metrics",
+      "title": "Six models that didn't make it",
+      "metrics": [
+        { "label": "Best accuracy reached", "value": "73.1%" },
+        { "label": "Most unhappy customers caught", "value": "9 of 12" },
+        { "label": "Test AUC above CV AUC by", "value": "0.14–0.32" },
+        { "label": "MLP happy recall", "value": "0%" }
+      ],
+      "bullets": [
+        "SVM, Gradient Boosting, XGBoost, CatBoost, LightGBM (Hyperopt) and an MLP neural network",
+        "Good test scores didn't hold up across cross-validation folds",
+        "The MLP collapsed and predicted every customer as unhappy",
+        "Key insight: one model with one feature set couldn't be good at both classes"
+      ],
+      "narration": "He tried six popular models first and they all hit a ceiling. The lesson: no single model could recognise both happy and unhappy customers well."
+    },
+    {
+      "type": "steps",
+      "title": "The insight: two moments in the journey",
+      "steps": [
+        { "label": "Ordering", "detail": "X3, \"I ordered everything I wanted\": the pre-delivery frustration signal. Random Forest uses it and becomes the unhappy specialist" },
+        { "label": "Delivery", "detail": "X1 on time + X5 courier: the shared baseline both models use" },
+        { "label": "Doorstep", "detail": "X2, \"contents as expected\": the post-delivery confirmation signal. KNN uses it and becomes the happy specialist" },
+        { "label": "Combine", "detail": "Average both models' probabilities equally; predict happy if the result is at least 0.47" }
+      ],
+      "narration": "Here's the clever part. Unhappiness starts at ordering, and happiness is sealed at the doorstep. So he gave each moment its own model and averaged their answers."
+    },
+    {
+      "type": "bars",
+      "title": "Results on the 26-row test set",
+      "unit": "Accuracy (%)",
+      "lowerIsBetter": false,
+      "bars": [
+        { "label": "Best of the six earlier models", "value": 73.1 },
+        { "label": "Random Forest alone", "value": 80.8 },
+        { "label": "KNN alone (K = 5)", "value": 80.8 },
+        { "label": "KNN + RF ensemble", "value": 88.5, "highlight": true }
+      ],
+      "metrics": [
+        { "label": "Unhappy customers caught", "value": "11 of 12" },
+        { "label": "Happy customers recognised", "value": "12 of 14" },
+        { "label": "ROC AUC", "value": "0.836" },
+        { "label": "F1 gap between classes", "value": "0.009" }
+      ],
+      "narration": "Together, the two models kept Random Forest's strength on unhappy customers and won back two happy ones it had missed. They made different mistakes, so combining them cancelled some out."
+    },
+    {
+      "type": "metrics",
+      "title": "Reading these numbers honestly",
+      "metrics": [
+        { "label": "CV unhappy recall", "value": "0.52" },
+        { "label": "CV happy recall", "value": "0.68" },
+        { "label": "CV AUC", "value": "0.62" }
+      ],
+      "bullets": [
+        "With 26 test rows, one customer moves recall by 7–8 points, so gaps between models are within noise",
+        "The 0.47 threshold was tuned on the same test set it's reported on, so 88.5% is optimistic",
+        "Cross-validation (above) is the more realistic estimate",
+        "Some choices were made by hand, e.g. the Random Forest features and K = 13 in the ensemble"
+      ],
+      "narration": "He's upfront about this: the test set is tiny and the threshold was tuned on it. Cross-validation gives a more realistic, more modest picture, and he reports both."
+    },
+    {
+      "type": "bullets",
+      "title": "What the business can do with it",
+      "bullets": [
+        "On-time delivery and courier quality are the foundation: low scores on both almost always mean unhappy",
+        "Unhappiness starts before delivery: \"couldn't order everything I wanted\" is a stock and catalogue problem, not a delivery one",
+        "Happiness is sealed at the doorstep: wrong items or substitutions break it",
+        "Price and the app aren't pain points today, but the app is worth rechecking after expansion"
+      ],
+      "narration": "The business takeaways matter as much as the model: fix stock gaps, get orders right at the doorstep, and keep deliveries on time."
+    },
+    {
+      "type": "links",
+      "title": "What's next, and explore it yourself",
+      "bullets": [
+        "Next: tune the threshold and features inside cross-validation, then test on new held-out data",
+        "Collect more survey responses to make the results reliable",
+        "Biggest lesson: on small data, report cross-validation alongside the test score",
+        "Both notebooks and all the plots are on GitHub"
+      ],
+      "narration": "The next step is more data and stricter validation. Both notebooks and every plot are on GitHub, so take a look!"
+    }
+  ]
+}

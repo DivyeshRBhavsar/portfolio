@@ -526,8 +526,7 @@ export default function HomeStage({
       ? [
           { key: 'tour', label: chipLabels.tour, onSelect: tour },
           { key: 'hiring', label: chipLabels.hiring, onSelect: go('/projects') },
-          // /projects only filters by language (no ML filter yet).
-          { key: 'ml', label: chipLabels.ml, onSelect: go('/projects') },
+          { key: 'ml', label: chipLabels.ml, onSelect: go('/projects?category=data-science') },
           { key: 'blog', label: chipLabels.blog, onSelect: go('/blog') },
           { key: 'ask', label: chipLabels.ask, onSelect: askLuffy },
         ]

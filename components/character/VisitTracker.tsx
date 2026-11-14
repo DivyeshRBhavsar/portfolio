@@ -6,7 +6,7 @@ import { blogPostFallbackName, blogPostName, pageNames } from './luffyLines';
 import { fill } from './speech';
 import { beginSession, recordPage, type VisitedPage } from './visitorMemory';
 
-/** Blog posts render their title in the page's <h1> (there's no per-post <title>). */
+/** Wait for the new page's content (client navigation commits it after this runs). */
 const TITLE_READ_DELAY_MS = 300;
 
 function pageFor(path: string): VisitedPage | null {
@@ -22,7 +22,10 @@ function pageFor(path: string): VisitedPage | null {
 function labelFor(path: string): string | null {
   if (pageNames[path]) return pageNames[path];
   if (path.startsWith('/blog/')) {
-    const title = document.querySelector('main h1')?.textContent?.trim();
+    // The reading room marks the post's title with data-visit-label.
+    const title =
+      document.querySelector('[data-visit-label]')?.getAttribute('data-visit-label')?.trim() ||
+      document.querySelector('main h1')?.textContent?.trim();
     return title ? fill(blogPostName, { title }) : blogPostFallbackName;
   }
   return null; // home, 404s, anything else: not worth "continuing"

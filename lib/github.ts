@@ -22,11 +22,13 @@ export const GITHUB_USERNAME = 'DivyeshRBhavsar';
 //   - with the GitHub topic SHOWCASE_TOPIC
 //   - if no repo has that topic yet, all the others, so the page is never empty
 // Names here match ignoring case, hyphens and underscores.
-const HIDDEN_REPOS: string[] = ['portfolio', 'DivyeshRBhavsar'];
+const HIDDEN_REPOS: string[] = ['DivyeshRBhavsar'];
 const SHOWCASE_TOPIC = 'showcase';
 
-// "Currently working on": the showcase repo with the most recent push. Set this to a
+// "Currently working on": the showcase repo with the most recent push, never one of
+// BADGE_EXCLUDE (this site's own repo would always win). Set PINNED_CURRENT_REPO to a
 // repo name to always show that one instead (falls back to the rule if it isn't found).
+const BADGE_EXCLUDE: string[] = ['portfolio'];
 const PINNED_CURRENT_REPO: string | null = null;
 
 // Shown first, in this order (the rest follow, most recently updated first).
@@ -156,7 +158,9 @@ export async function resolveRepoId(owner: string, name: string): Promise<number
  */
 export async function getCurrentRepo(): Promise<CurrentRepo | null> {
   try {
-    const repos = await getShowcaseRepos();
+    const repos = (await getShowcaseRepos()).filter(
+      (r) => !BADGE_EXCLUDE.some((name) => sameRepoName(name, r.name))
+    );
     const pinned = PINNED_CURRENT_REPO
       ? repos.find((r) => sameRepoName(r.name, PINNED_CURRENT_REPO))
       : undefined;
@@ -171,10 +175,4 @@ export async function getCurrentRepo(): Promise<CurrentRepo | null> {
   } catch {
     return null;
   }
-}
-
-export function getLanguages(repos: Repo[]): string[] {
-  const set = new Set<string>();
-  repos.forEach((r) => r.language && set.add(r.language));
-  return Array.from(set).sort();
 }

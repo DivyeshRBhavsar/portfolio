@@ -5,7 +5,7 @@
   "repo": "https://github.com/DivyeshRBhavsar/Secure-Portal-PDF-Data-Extraction-System",
   "links": [],
   "tags": ["Automation", "Playwright", "pdfplumber", "Streamlit", "Python", "pytest", "GitHub Actions"],
-  "featured": false,
+  "featured": true,
   "order": 5,
   "slides": [
     {

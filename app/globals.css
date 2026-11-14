@@ -241,6 +241,12 @@ html[data-projects-view='story'] .projects-view-btn[data-view='story'] {
   @apply border-ink bg-sun text-on-sun hover:bg-sun;
 }
 
+/* A direct link to /projects?category=…: the list waits (one frame or so) for React to
+   show that category instead of flashing the All view. ProjectsView removes the flag. */
+html[data-projects-category-pending] .projects-list {
+  visibility: hidden;
+}
+
 /* The overlay: fixed full screen, the theme's page colour, safe-area padding. The page
    underneath can't scroll (useScrollLock.ts pins the body once React is running). */
 html[data-projects-view='story'] {
@@ -679,4 +685,234 @@ textarea:focus-visible {
 
 .pill {
   @apply px-3 py-1.5 rounded-full text-sm font-mono border transition-colors;
+}
+
+/* ---------- Blog: topic colours ----------
+   Dots and stripes only (lib/blogTopics.ts); a topic's name is always written in ink
+   beside its colour, so contrast never depends on these. Tuned for light and dark. */
+:root {
+  --c-topic-nlp-llms: 124 58 237;
+  --c-topic-machine-learning: 234 170 0;
+  --c-topic-data-engineering: 13 148 136;
+  --c-topic-career-learning: 22 163 74;
+  --c-topic-web-development: 37 99 235;
+  --c-topic-other: 120 113 108;
+}
+:root[data-theme='night'],
+html[data-reader-theme='night'] .reading-room {
+  --c-topic-nlp-llms: 167 139 250;
+  --c-topic-machine-learning: 255 197 49;
+  --c-topic-data-engineering: 45 212 191;
+  --c-topic-career-learning: 74 222 128;
+  --c-topic-web-development: 96 165 250;
+  --c-topic-other: 168 162 158;
+}
+html[data-reader-theme='paper'] .reading-room,
+html[data-reader-theme='sepia'] .reading-room {
+  --c-topic-nlp-llms: 124 58 237;
+  --c-topic-machine-learning: 234 170 0;
+  --c-topic-data-engineering: 13 148 136;
+  --c-topic-career-learning: 22 163 74;
+  --c-topic-web-development: 37 99 235;
+  --c-topic-other: 120 113 108;
+}
+
+/* The /blog list waits for a shared ?topic= / ?q= link to apply (BLOG_READER_SCRIPT). */
+html[data-blog-filter-pending] .blog-library-results {
+  visibility: hidden;
+}
+
+/* ---------- Blog: the reading room ----------
+   <html data-reader-size|width|font|theme> come from the "Aa" settings
+   (components/blog/readerSettings.ts), set before first paint. The reading area
+   redefines the theme's colour variables for Paper, Sepia and Night, so the prose and
+   every Tailwind colour inside it follow; Auto keeps the site's time-of-day theme.
+   The header and footer are outside it and keep the site theme. Contrast (WCAG AA)
+   for text, muted text, links and code was checked in every reading theme. */
+
+html[data-reader-theme='paper'] .reading-room {
+  --c-cream: 255 255 255;
+  --c-peach: 243 241 236;
+  --c-surface: 248 247 244;
+  --c-ink: 26 26 26;
+  --c-ink-muted: 82 82 82;
+  --c-red-deep: 176 22 14;
+  --c-ring: 176 22 14;
+  --c-shadow: 26 26 26;
+  color-scheme: light;
+}
+html[data-reader-theme='sepia'] .reading-room {
+  --c-cream: 246 239 222;
+  --c-peach: 236 225 199;
+  --c-surface: 251 246 234;
+  --c-ink: 59 45 28;
+  --c-ink-muted: 100 79 54;
+  --c-red-deep: 150 32 12;
+  --c-ring: 150 32 12;
+  --c-shadow: 59 45 28;
+  color-scheme: light;
+}
+html[data-reader-theme='night'] .reading-room {
+  --c-cream: 20 22 30;
+  --c-peach: 30 33 44;
+  --c-surface: 32 35 47;
+  --c-ink: 230 226 216;
+  --c-ink-muted: 172 167 158;
+  --c-red-deep: 255 143 128;
+  --c-ring: 255 143 128;
+  --c-shadow: 0 0 0;
+  color-scheme: dark;
+}
+
+.reading-room {
+  background-color: rgb(var(--c-cream));
+  color: rgb(var(--c-ink));
+  --reader-font-size: 1.125rem;
+  --reader-measure: 68ch;
+}
+body:has(.reading-room) > footer {
+  margin-top: 0;
+}
+
+html[data-reader-size='s'] .reading-room { --reader-font-size: 1rem; }
+html[data-reader-size='m'] .reading-room { --reader-font-size: 1.125rem; }
+html[data-reader-size='l'] .reading-room { --reader-font-size: 1.25rem; }
+html[data-reader-size='xl'] .reading-room { --reader-font-size: 1.375rem; }
+
+html[data-reader-width='narrow'] .reading-room { --reader-measure: 58ch; }
+html[data-reader-width='medium'] .reading-room { --reader-measure: 68ch; }
+html[data-reader-width='wide'] .reading-room { --reader-measure: 82ch; }
+
+.reader-column {
+  font-size: var(--reader-font-size);
+  max-width: var(--reader-measure);
+}
+.reader-column .reader-body.prose {
+  font-size: 1em;
+}
+html[data-reader-font='serif'] .reader-column,
+.reader-font-sample-serif {
+  font-family: var(--font-reader-serif), Georgia, 'Times New Roman', serif;
+}
+html[data-reader-font='dyslexic'] .reader-column,
+.reader-font-sample-dyslexic {
+  font-family: var(--font-reader-dyslexic), Verdana, sans-serif;
+}
+html[data-reader-font='serif'] .reader-column :is(h1, h2, h3, h4),
+html[data-reader-font='dyslexic'] .reader-column :is(h1, h2, h3, h4) {
+  font-family: inherit;
+}
+
+/* Prose colours from the theme variables, in every reading theme. Code blocks stay
+   dark (light text) in all of them. */
+html .reading-room .reader-body.prose.prose-neutral {
+  --tw-prose-body: rgb(var(--c-ink));
+  --tw-prose-headings: rgb(var(--c-ink));
+  --tw-prose-lead: rgb(var(--c-ink-muted));
+  --tw-prose-links: rgb(var(--c-red-deep));
+  --tw-prose-bold: rgb(var(--c-ink));
+  --tw-prose-counters: rgb(var(--c-ink-muted));
+  --tw-prose-bullets: rgb(var(--c-ink-muted));
+  --tw-prose-hr: rgb(var(--c-ink) / 0.15);
+  --tw-prose-quotes: rgb(var(--c-ink));
+  --tw-prose-quote-borders: rgb(var(--c-ink) / 0.25);
+  --tw-prose-captions: rgb(var(--c-ink-muted));
+  --tw-prose-kbd: rgb(var(--c-ink));
+  --tw-prose-kbd-shadows: var(--c-ink);
+  --tw-prose-code: rgb(var(--c-ink));
+  --tw-prose-pre-code: #e8e6e1;
+  --tw-prose-pre-bg: #24262d;
+  --tw-prose-th-borders: rgb(var(--c-ink) / 0.3);
+  --tw-prose-td-borders: rgb(var(--c-ink) / 0.15);
+}
+html[data-reader-theme='night'] .reading-room .reader-body.prose.prose-neutral,
+html[data-theme='night'][data-reader-theme='auto'] .reading-room .reader-body.prose.prose-neutral {
+  --tw-prose-pre-bg: #0b0e1f;
+}
+/* Long links and inline code wrap instead of widening the page on phones (code
+   blocks scroll sideways on their own). */
+.reader-body {
+  overflow-wrap: break-word;
+}
+.reader-body :is(a, :not(pre) > code) {
+  overflow-wrap: anywhere;
+}
+.reading-room .reader-body pre {
+  border: 1px solid rgb(var(--c-ink) / 0.15);
+}
+
+/* Sticky toolbar under the site header (its height is measured into --header-h). */
+.reader-toolbar {
+  position: sticky;
+  top: var(--header-h, 4rem);
+  /* Above the site header (z-40), so Luffy on the progress line isn't cut off. */
+  z-index: 41;
+}
+.reader-sidebar-inner {
+  position: sticky;
+  top: calc(var(--header-h, 4rem) + 4.5rem);
+  max-height: calc(100vh - var(--header-h, 4rem) - 6rem);
+  overflow-y: auto;
+}
+.reader-body :is(h2, h3) {
+  scroll-margin-top: calc(var(--header-h, 4rem) + 4.5rem);
+}
+.reader-option:has(input:focus-visible) {
+  outline: 2px solid rgb(var(--c-ring));
+  outline-offset: 2px;
+}
+
+/* Progress: --reader-progress (0–1) is set on the bar; Luffy rides the end of it. */
+.reader-progress-fill {
+  transform: scaleX(var(--reader-progress, 0));
+  transform-origin: left;
+}
+.reader-progress-head {
+  left: clamp(0px, calc(var(--reader-progress, 0) * 100% - 8px), calc(100% - 16px));
+  transform: translateY(-50%);
+}
+
+/* The "Aa" tip: a little pointer up to the button. */
+.reader-tip {
+  position: relative;
+}
+.reader-tip::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: 14px;
+  width: 12px;
+  height: 12px;
+  background: rgb(var(--c-sun));
+  border-left: 2px solid rgb(var(--c-ink));
+  border-top: 2px solid rgb(var(--c-ink));
+  transform: rotate(45deg);
+}
+
+/* Focus mode (toolbar or F; Esc leaves): no site header, sidebar or footer, and every
+   block but the one in the middle of the screen dimmed a little (still AA). */
+html[data-reader-focus] body > .site-header,
+html[data-reader-focus] body > footer,
+html[data-reader-focus] .reader-sidebar {
+  display: none;
+}
+html[data-reader-focus] .reader-toolbar {
+  top: 0;
+}
+html[data-reader-focus] .reader-body > :not(ul, ol),
+html[data-reader-focus] .reader-body > :is(ul, ol) > li {
+  /* 0.7 keeps dimmed text above 4.5:1 in every theme (sepia: 4.8). */
+  opacity: 0.7;
+  transition: opacity 0.35s ease;
+}
+html[data-reader-focus] .reader-body [data-reader-current] {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Luffy stays still at the end of the bar; only the bar fills. */
+  .reader-progress-head {
+    left: auto;
+    right: 0;
+  }
 }

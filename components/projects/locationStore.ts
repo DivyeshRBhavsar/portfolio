@@ -3,8 +3,9 @@
 import { useSyncExternalStore } from 'react';
 
 /**
- * The URL hash as React state. Story mode uses it for the slide number
- * (/projects/<slug>#3) and the picker (/projects#stories). pushState/replaceState don't
+ * The URL's hash and query as React state. Story mode uses the hash for the slide number
+ * (/projects/<slug>#3) and the picker (/projects#stories); the list uses the query for
+ * its category (/projects?category=ai-llm). pushState/replaceState don't
  * fire hashchange, so whoever calls them calls notifyLocation() afterwards.
  */
 
@@ -30,6 +31,15 @@ export function useLocationHash(): string {
   return useSyncExternalStore(
     subscribe,
     () => window.location.hash,
+    () => ''
+  );
+}
+
+/** '?category=ai-llm' or '' (always '' on the server and during hydration). */
+export function useLocationSearch(): string {
+  return useSyncExternalStore(
+    subscribe,
+    () => window.location.search,
     () => ''
   );
 }

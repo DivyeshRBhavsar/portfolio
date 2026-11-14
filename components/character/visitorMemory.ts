@@ -3,7 +3,9 @@
  * across visits, sessionStorage for this visit. Every access is wrapped in try/catch;
  * with storage blocked, every visit simply counts as new.
  *
- * localStorage   luffy-visitor   { name?, firstVisit, lastVisit, pages[], quiet?, stories? }
+ * localStorage   luffy-visitor   { name?, firstVisit, lastVisit, pages[], quiet?, stories?, posts? }
+ *                luffy-reader    blog reader settings (components/blog)
+ *                luffy-reader-tip '1' once the "Aa" tooltip has shown (components/blog)
  *                luffy-projects-view  'list' or 'story' (components/projects)
  *                luffy-theme     header toggle (components/theme)
  * sessionStorage luffy-session   { type, lastPage }  fixed at the first page of the visit
@@ -31,6 +33,22 @@ export type VisitedPage = {
 /** The last slide a visitor viewed in a story (1-based), and whether it was the last one. */
 export type StoryProgress = { slide: number; finished: boolean };
 
+/**
+ * How far a visitor got in a blog post: the share of the article body read (0–1), the
+ * index of the paragraph they were reading, and whether they ever reached 90%.
+ */
+export type PostProgress = {
+  progress: number;
+  paragraph: number;
+  finished: boolean;
+  /** Date.now() of the last save, for "most recent first". */
+  updatedAt: number;
+};
+
+/** A post counts as finished once 90% of its body has been read. */
+export const POST_FINISHED_AT = 0.9;
+const MAX_POSTS = 50;
+
 export type VisitorRecord = {
   name?: string;
   /** Local dates, YYYY-MM-DD. */
@@ -42,6 +60,8 @@ export type VisitorRecord = {
   quiet?: boolean;
   /** Per story slug: where "Continue" resumes. */
   stories?: Record<string, StoryProgress>;
+  /** Per blog post slug: reading progress (Continue reading). */
+  posts?: Record<string, PostProgress>;
 };
 
 export type VisitorType = 'new' | 'returning';
@@ -101,6 +121,32 @@ function readProgress(value: unknown): Record<string, StoryProgress> | undefined
   return Object.keys(result).length > 0 ? result : undefined;
 }
 
+function readPosts(value: unknown): Record<string, PostProgress> | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const result: Record<string, PostProgress> = {};
+  for (const [slug, entry] of Object.entries(value as Record<string, unknown>)) {
+    const p = entry as PostProgress;
+    if (
+      p &&
+      typeof p.progress === 'number' &&
+      p.progress >= 0 &&
+      p.progress <= 1 &&
+      Number.isInteger(p.paragraph) &&
+      p.paragraph >= 0 &&
+      typeof p.finished === 'boolean' &&
+      typeof p.updatedAt === 'number'
+    ) {
+      result[slug] = {
+        progress: p.progress,
+        paragraph: p.paragraph,
+        finished: p.finished,
+        updatedAt: p.updatedAt,
+      };
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
 /** Read and sanity-check the stored record (it's user-editable, so trust nothing). */
 export function readVisitor(): VisitorRecord | null {
   const data = readJson(local, VISITOR_KEY) as Partial<VisitorRecord> | null;
@@ -113,6 +159,7 @@ export function readVisitor(): VisitorRecord | null {
     pages: Array.isArray(data.pages) ? data.pages.filter(isPage).slice(0, MAX_PAGES) : [],
     quiet: data.quiet === true,
     stories: readProgress(data.stories),
+    posts: readPosts(data.posts),
   };
 }
 
@@ -194,6 +241,39 @@ export function saveStoryProgress(slug: string, slide: number, total: number): v
   if (!record) return;
   const stories = { ...record.stories, [slug]: { slide, finished: slide >= total } };
   writeVisitor({ ...record, stories });
+}
+
+/** Every blog post the visitor has read some of (empty with storage blocked). */
+export function readPostProgress(): Record<string, PostProgress> {
+  return readVisitor()?.posts ?? {};
+}
+
+/** Remember how far the visitor got in a post. Once finished, it stays finished. */
+export function savePostProgress(slug: string, progress: number, paragraph: number): void {
+  const record = readVisitor();
+  if (!record) return;
+  const before = record.posts?.[slug];
+  const entry: PostProgress = {
+    progress: Math.round(Math.min(1, Math.max(0, progress)) * 1000) / 1000,
+    paragraph: Math.max(0, Math.floor(paragraph)),
+    finished: (before?.finished ?? false) || progress >= POST_FINISHED_AT,
+    updatedAt: Date.now(),
+  };
+  const posts = Object.fromEntries(
+    Object.entries({ ...record.posts, [slug]: entry })
+      .sort(([, a], [, b]) => b.updatedAt - a.updatedAt)
+      .slice(0, MAX_POSTS)
+  );
+  writeVisitor({ ...record, posts });
+}
+
+/** "Start over": forget the saved place in a post. */
+export function clearPostProgress(slug: string): void {
+  const record = readVisitor();
+  if (!record?.posts?.[slug]) return;
+  const posts = { ...record.posts };
+  delete posts[slug];
+  writeVisitor({ ...record, posts: Object.keys(posts).length > 0 ? posts : undefined });
 }
 
 /**

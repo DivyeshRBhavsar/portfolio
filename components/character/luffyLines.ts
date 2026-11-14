@@ -319,3 +319,145 @@ export const storyControlLabels = {
 export const storyModeLabel = "Story mode with Luffy: project stories";
 export const slideCounterLabel = "Slide {n} of {total}";
 export const storyRegionLabel = "Project story: {title}";
+
+// Expertise categories (names, descriptions and skills live in lib/categories.ts).
+// When a category chip is picked in story mode's picker. Keyed by category slug.
+export const storyCategoryLines: Record<string, string[]> = {
+  "ai-llm": [
+    "AI it is! Language models and computer vision, my favourite kind of magic. 🧠",
+    "Ooh, the AI ones! This is where Divyesh teaches machines to read and to see. Pick one!",
+  ],
+  "data-science": [
+    "Data science! Real questions, real data, and models that answer them. 📊",
+    "Good choice{nameComma}! These are the ones where the numbers tell the story.",
+  ],
+  "data-engineering": [
+    "Pipelines and automation! Messy data in, clean data out. 🔧",
+    "This is where Divyesh turns locked-away data into something useful. Pick one!",
+  ],
+  "software-development": [
+    "Complete apps, from the interface down to the database. 💻",
+    "Software it is{nameComma}! These ones are built to be used, not just run once.",
+  ],
+  "web-development": [
+    "Web projects! You're looking at one of them right now. 🌐",
+    "Websites with a bit of motion. Pick one and I'll show you how it was built!",
+  ],
+  other: [
+    "A few experiments and smaller builds. Curious? Pick one!",
+    "The odds and ends! Sometimes the side projects are the fun ones. 🧪",
+  ],
+};
+
+export const categoryAllLabel = "All";
+export const categoryChipsLabel = {
+  projects: "Filter projects by expertise",
+  stories: "Filter stories by expertise",
+};
+// Read after each chip's count by screen readers. {n} = the count
+export const categoryCountLabels = {
+  projects: { one: "1 project", other: "{n} projects" },
+  stories: { one: "1 story", other: "{n} stories" },
+};
+export const categorySkillsLabel = "Skills";
+export const cardTechLabel = "Built with";
+export const cardCategoriesLabel = "Also in";
+
+// ── 10. Blog: the reading room and the library ──
+// Post pages (/blog/<slug>) and the index (/blog). Edit freely.
+// Placeholders: {n} = a number, {total} = another number, {title} = a post title,
+// {name} = a series name, {nameComma} = ", Priya" or nothing.
+
+// Luffy's pick on /blog: one post a day (same for everyone that day).
+export const blogPickLabel = "Luffy's pick";
+export const blogPickLines = [
+  "My pick for today! Grab a drink and get comfy. ☕",
+  "If you only read one thing today, make it this one. 📖",
+  "This one's a favourite of mine. Trust me on this!",
+];
+
+// Nothing matches the search or topic.
+export const blogEmptyLines = [
+  "Hmm, nothing matches that. Try another word, or clear the filters!",
+  "I looked everywhere and found nothing. Maybe a different word?",
+  "No posts like that yet. Divyesh might write one someday! ✍️",
+];
+export const blogClearFiltersLabel = "Clear filters";
+
+// The library.
+export const blogSearchLabel = "Search posts";
+export const blogSearchPlaceholder = "Search titles, summaries and tags";
+export const blogTopicChipsLabel = "Filter posts by topic";
+export const blogTopicAllLabel = "All";
+// Read after each chip's count by screen readers.
+export const blogPostCountLabels = { one: "1 post", other: "{n} posts" };
+export const blogResultsLabel = { one: "1 post", other: "{n} posts" };
+export const blogAllPostsHeading = "All posts";
+export const blogShelfHeading = "Continue reading";
+export const blogShelfProgress = "{n}% read · {total} min left";
+export const blogReadingTimeLabel = "{n} min read";
+export const blogSeriesLabel = "{name} · Part {n}";
+export const blogTopicLabel = "Topic";
+export const blogLevelLabel = "Level";
+export const blogTagsLabel = "Tags";
+
+// Continue where you left off (post pages, when a reader comes back to an unfinished post).
+export const continueReadingPrompts = [
+  "Continue where you left off?",
+  "Welcome back{nameComma}! Continue where you left off?",
+];
+export const continueResumeLabel = "Resume";
+export const continueStartOverLabel = "Start over";
+
+// The reading toolbar.
+export const readerToolbarLabel = "Reading tools";
+export const readerContentsLabel = "Contents";
+export const readerMinutesLeft = "{n} min left";
+export const readerDone = "Done 🎉";
+export const readerProgressLabel = "Reading progress";
+export const readerProgressValue = "{n}% read, {total} min left";
+export const readerSettingsButton = "Aa";
+export const readerSettingsButtonLabel = "Reader settings: text size, font and theme";
+export const readerFocusLabel = "Focus mode";
+export const readerExitFocusLabel = "Exit focus";
+export const readerMoreLabel = "More reading tools";
+export const readerTip = "Make it comfy: text size, font and night mode.";
+
+// The reader settings dialog ("Aa").
+export const readerSettingsTitle = "Reader settings";
+export const readerSettingsDone = "Done";
+export const readerSettingsGroups = {
+  size: "Text size",
+  width: "Line width",
+  font: "Font",
+  theme: "Reading theme",
+};
+// short = on the button, full = for screen readers and the tooltip
+export const readerSizeOptions = {
+  s: { short: "S", full: "Small" },
+  m: { short: "M", full: "Medium" },
+  l: { short: "L", full: "Large" },
+  xl: { short: "XL", full: "Extra large" },
+};
+export const readerWidthOptions = {
+  narrow: "Narrow",
+  medium: "Medium",
+  wide: "Wide",
+};
+export const readerFontOptions = {
+  sans: "Sans",
+  serif: "Serif",
+  dyslexic: "Dyslexia-friendly",
+};
+export const readerThemeOptions = {
+  auto: "Auto",
+  paper: "Paper",
+  sepia: "Sepia",
+  night: "Night",
+};
+export const readerThemeAutoHint = "Follows the site's time-of-day theme";
+// Marks the standard choice in each group.
+export const readerDefaultLabel = "Default";
+export const readerResetLabel = "Reset to default";
+// Shown (and read out) for a moment after resetting.
+export const readerResetDone = "Settings reset";

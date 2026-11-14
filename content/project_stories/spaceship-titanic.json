@@ -1,0 +1,173 @@
+{
+  "slug": "spaceship-titanic",
+  "title": "Lost in Another Dimension",
+  "hook": "Predicting which passengers of the Spaceship Titanic were transported to another dimension, using logic-based imputation and a tuned CatBoost model",
+  "repo": "https://github.com/DivyeshRBhavsar/Spaceship_titanic",
+  "links": [
+    {
+      "label": "Kaggle competition",
+      "url": "https://www.kaggle.com/competitions/spaceship-titanic"
+    }
+  ],
+  "tags": [
+    "Machine Learning",
+    "CatBoost",
+    "XGBoost",
+    "LightGBM",
+    "Optuna",
+    "Feature Engineering",
+    "Kaggle"
+  ],
+  "featured": true,
+  "order": 5,
+  "slides": [
+    {
+      "type": "title",
+      "title": "Lost in Another Dimension",
+      "subtitle": "Kaggle \"Spaceship Titanic\" competition",
+      "narration": "This is a Kaggle sci-fi twist on the classic Titanic problem. A spaceship hit a spacetime anomaly, and the task is to predict which passengers were transported to another dimension."
+    },
+    {
+      "type": "metrics",
+      "title": "The data",
+      "metrics": [
+        {
+          "label": "Training passengers",
+          "value": "8,693"
+        },
+        {
+          "label": "Test passengers",
+          "value": "4,277"
+        },
+        {
+          "label": "Transported",
+          "value": "50.4%"
+        },
+        {
+          "label": "Missing per column",
+          "value": "~2%"
+        }
+      ],
+      "bullets": [
+        "Passenger ID (with group), home planet, cabin, destination, age, VIP and cryosleep",
+        "Five onboard spending columns: room service, food court, mall, spa and VR deck",
+        "The classes are balanced, so accuracy is a fair metric"
+      ],
+      "narration": "There are almost nine thousand passengers, split evenly between transported and not. Small gaps are scattered across nearly every column."
+    },
+    {
+      "type": "bullets",
+      "title": "Detective work on missing data",
+      "bullets": [
+        "The cabin deck reveals the home planet: decks A, B, C and T are over 98% Europa, and deck G is 99.7% Earth",
+        "Passengers in cryosleep can't spend, so zero spending identifies missing cryosleep values",
+        "Passengers in the same group usually share a planet, deck and side, so groups fill each other's gaps",
+        "Age was filled with the median for each home planet and cryosleep combination"
+      ],
+      "narration": "Instead of filling gaps with averages, Divyesh used the data's own rules. For example, people in cryosleep can't spend money, and certain decks only hold passengers from one planet."
+    },
+    {
+      "type": "steps",
+      "title": "The pipeline",
+      "steps": [
+        {
+          "label": "Engineer",
+          "detail": "24 features: deck, cabin number and side; log-scaled luxury and basic spending; group and family size"
+        },
+        {
+          "label": "No leakage",
+          "detail": "Group features are computed from training data only, and preprocessing is refit inside every CV fold"
+        },
+        {
+          "label": "Compare",
+          "detail": "XGBoost, LightGBM and CatBoost compared with 5-fold stratified cross-validation"
+        },
+        {
+          "label": "Tune",
+          "detail": "Optuna: 100 trials over 10 CatBoost hyperparameters"
+        }
+      ],
+      "narration": "The work moved step by step: build meaningful features, keep the validation honest, compare three boosting models, then tune the winner."
+    },
+    {
+      "type": "bars",
+      "title": "Model comparison",
+      "unit": "5-fold CV accuracy (%)",
+      "lowerIsBetter": false,
+      "bars": [
+        {
+          "label": "LightGBM",
+          "value": 81.04
+        },
+        {
+          "label": "XGBoost",
+          "value": 81.19
+        },
+        {
+          "label": "CatBoost",
+          "value": 81.3
+        },
+        {
+          "label": "CatBoost + Optuna",
+          "value": 81.84,
+          "highlight": true
+        }
+      ],
+      "metrics": [
+        {
+          "label": "Final CV accuracy",
+          "value": "81.84% ± 0.67%"
+        },
+        {
+          "label": "Kaggle submission accuracy",
+          "value": "80.789%"
+        }
+      ],
+      "narration": "All three boosting models were close, and CatBoost came out slightly ahead. Tuning it with Optuna added about half a percentage point."
+    },
+    {
+      "type": "bars",
+      "title": "What predicts being transported",
+      "unit": "CatBoost feature importance",
+      "bars": [
+        {
+          "label": "Luxury spending (spa, VR, room service)",
+          "value": 24.7,
+          "highlight": true
+        },
+        {
+          "label": "Cabin deck",
+          "value": 13.6
+        },
+        {
+          "label": "Cabin number",
+          "value": 11.6
+        },
+        {
+          "label": "Home planet",
+          "value": 8.4
+        },
+        {
+          "label": "Basic spending (food, mall)",
+          "value": 6.0
+        }
+      ],
+      "bullets": [
+        "Passengers who were not transported spent more than twice as much on average (≈2,004 vs ≈886)",
+        "Where you slept on the ship mattered almost as much as what you spent"
+      ],
+      "narration": "Luxury spending was the strongest clue by far, followed by where the passenger's cabin was. Big spenders were much less likely to be transported."
+    },
+    {
+      "type": "links",
+      "title": "What's next, and explore it yourself",
+      "bullets": [
+        "Next: ensemble CatBoost, LightGBM and XGBoost for a final boost",
+        "Try the neural network that's set up but not yet trained",
+        "Biggest lesson: understanding the data's own rules beat generic imputation",
+        "All notebooks and the reusable cleaning class are on GitHub"
+      ],
+      "narration": "Next up is combining the three models. The notebooks and the cleaning code are all on GitHub, so have a look!"
+    }
+  ]
+}

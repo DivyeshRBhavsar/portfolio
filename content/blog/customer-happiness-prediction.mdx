@@ -2,11 +2,11 @@
 title: "My First Real-World Client Project: Predicting Customer Unhappiness at Apziva"
 date: "2026-05-03"
 author: "Divyesh Bhavsar"
+topic: "Machine Learning"
+level: "Intermediate"
 tags: ["machine-learning", "apziva", "ensemble-learning", "classification", "python"]
 summary: "How a 126-row survey from a logistics company taught me more about real-world ML than any dataset had before — and why the answer turned out to be two specialist models instead of one."
 ---
-
-# My First Real-World Client Project: Predicting Customer Unhappiness
 
 Every dataset I'd worked with before this one was clean, well-documented, and designed to be learned from. This project, [Customer Unhappiness Prediction](https://github.com/DivyeshRBhavsar/UXQuJpm6fj5xoNLi), was the first time I sat down with real data from a real company and had to find an answer nobody had already validated for me. It's my first project as part of my AI Residency at Apziva, and it changed how I think about what "a good model" even means.
 
@@ -29,13 +29,13 @@ The dataset itself was small and real in a way academic datasets rarely are — 
 
 Before touching a single model, I ran three independent statistical checks — point-biserial correlation, a chi-square test, and Random Forest feature importance — to see which of the six questions actually carried predictive signal.
 
-Two features, X4 (price) and X6 (app usability), got eliminated across all three methods. That was the first genuinely useful business finding of the project: customers weren't churning over price or app friction. What drove happiness or unhappiness lived in X1, X2, X3, and X5 — the actual delivery experience and whether they got what they ordered.
+Two features, X4 (price) and X6 (app usability), didn't get a single vote from any of the three methods, so I dropped them. X1 (on time) was the only feature significant in all three checks. That was the first genuinely useful business finding of the project: customers weren't churning over price or app friction. What drove happiness or unhappiness lived in X1, X2, X3, and X5 — the actual delivery experience and whether they got what they ordered.
 
 ## Step 2: Six models, six different ways to fail
 
 This is the part of the project that taught me the most, and it's not the part with the best-looking metrics. I tried six models before landing on an approach that actually worked: SVM, Gradient Boosting, XGBoost, CatBoost, LightGBM, and an MLP neural network.
 
-Every single one of them failed the same way, just at different intensities: they could be good at catching unhappy customers, or good at catching happy ones, but never both. The boosting models naturally leaned toward the majority "happy" class; when I corrected for the class imbalance with weights, they'd overcorrect and swing hard toward "unhappy" instead. The neural network was the most extreme version of this — pushed toward the minority class so aggressively it nearly labeled everyone unhappy.
+Every single one of them hit the same ceiling: none got past 73% accuracy, and none caught more than 9 of the 12 unhappy customers in the test set. Worse, their good test scores didn't hold up — for every model except the MLP, the test AUC was 0.14 to 0.32 higher than its cross-validated AUC, a sure sign that 100 training rows weren't enough for any of them to learn something stable. The neural network was the most extreme case: it collapsed and labelled *every single customer* unhappy, which gave it perfect unhappy recall and zero happy recall.
 
 The real insight wasn't about tuning harder. It was that **a single model with a single feature set couldn't specialize in both classes at once.**
 
@@ -45,7 +45,7 @@ Instead of continuing to force one model to do both jobs, I looked at what each 
 
 **Random Forest**, using features X1, X3, and X5, turned out to be an excellent unhappy-customer detector — catching 11 of every 12 unhappy respondents. The feature that made the difference was X3 ("I ordered everything I wanted"): a frustration that shows up *before* delivery even happens. No amount of delivery perfection compensates for a customer who couldn't get what they came for in the first place.
 
-**KNN**, using X1, X2, and X5, matched that same unhappy-detection rate but was noticeably better at correctly identifying happy customers. The feature doing the work here was X2 ("contents were as expected") — a *post-delivery* confirmation signal. When a customer opens the box and it's exactly right, that's the moment satisfaction gets sealed.
+**KNN**, using X1, X2, and X5, caught 10 of the 12 unhappy customers on its own, but was noticeably better at correctly identifying happy ones (11 of 14, against Random Forest's 10). Refit with a larger neighbourhood for the ensemble, it matched Random Forest's 11 of 12. The feature doing the work here was X2 ("contents were as expected") — a *post-delivery* confirmation signal. When a customer opens the box and it's exactly right, that's the moment satisfaction gets sealed.
 
 Laid out side by side, the pattern was obvious:
 
@@ -66,7 +66,7 @@ Final P(Happy) = (2 × KNN_prob + 2 × RF_prob) / 4
 Threshold      = 0.47  →  predict Happy if P(Happy) ≥ 0.47
 ```
 
-A threshold sweep (testing values between 0.20 and 0.80) found that 0.47 — just slightly below the default 0.50 — was the sweet spot, recovering several happy customers that Random Forest alone had been misclassifying.
+A threshold sweep (testing values between 0.20 and 0.80) found that 0.47 — just slightly below the default 0.50 — was the sweet spot, recovering two of the four happy customers that Random Forest alone had been misclassifying.
 
 The result held Random Forest's strength on unhappy customers while gaining KNN's strength on happy ones:
 
@@ -76,7 +76,7 @@ The result held Random Forest's strength on unhappy customers while gaining KNN'
 - **ROC-AUC: 0.836**
 - **F1 Gap: 0.009** — essentially no bias toward either class
 
-That last number is the one I care about most. Every one of the six earlier models had a large gap between how well it handled each class. Getting that gap down to nearly zero was the actual win — not the accuracy number by itself.
+That last number is the one I care about most. The goal was never just accuracy: it was catching unhappy customers without wrongly flagging the happy ones. The ensemble is the first model in the project that does both at once.
 
 ## What the client actually needed to hear
 
@@ -86,20 +86,26 @@ The metrics matter, but the business findings are what make this useful to a rea
 - **The unhappy trigger happens before delivery.** "I couldn't order everything I wanted" points at catalogue and stock issues, not the delivery process. Fixing the courier experience won't fix this one.
 - **The happy seal happens at the doorstep.** Getting exactly what was ordered is the moment satisfaction locks in — and even a flawless delivery process can't undo a wrong or substituted item.
 - **Price and app usability weren't current pain points** — both were statistically ruled out, though that could shift as the company expands into new markets.
-- **The model catches 11 of 12 unhappy customers from survey data alone**, which means the client can act before those customers churn rather than after.
+- **The model caught 11 of 12 unhappy customers in the test set from survey answers alone**, which points to acting before customers churn rather than after — once it's confirmed on more data (see below).
 
 ## What working with real client data actually taught me
 
 This was different from any competition or coursework dataset I'd used before, and the differences are exactly what made it valuable:
 
 - **126 rows is not a lot of data**, and every modeling decision had to respect that — there's no room to burn a chunk of it on a model that doesn't generalize.
-- **Accuracy alone hides the real story.** A model that's 80% accurate but only catches 71% of unhappy customers is arguably worse for this business than one with slightly lower accuracy and a balanced recall across both classes.
+- **Accuracy alone hides the real story.** Two models with the same accuracy can fail completely different customers. For this business, which customers a model gets wrong matters more than how many.
 - **Failure is informative, not wasted effort.** The six models that didn't make the cut weren't a detour — they're what revealed that the two classes needed two different lenses in the first place.
 - **The best answer isn't always "pick the best model."** Sometimes it's recognizing that two decent, differently-biased models say more together than one great model says alone.
 
 ## Honest limitations
 
-126 responses is a small sample, and I want to be upfront about what that means: there's real risk of the model picking up patterns specific to this particular survey wave rather than the underlying customer base as a whole. If the client collects another round of survey data, re-validating this ensemble against it — rather than assuming it holds indefinitely — would be the right next step before leaning on it for high-stakes retention decisions.
+126 responses is a small sample, and I want to be upfront about what that means:
+
+- **The test set is tiny.** With 26 test rows, one customer moves recall by 7–8 points, so the gaps between models are within noise.
+- **The 88.5% is optimistic.** I chose the 0.47 threshold with a sweep on the same 26 rows I report it on.
+- **Cross-validation tells a more modest story.** Across 50 cross-validation folds on the training data, the ensemble averaged an unhappy recall of 0.52, a happy recall of 0.68 and an AUC of 0.62. That's the more realistic estimate.
+
+There's real risk of the model picking up patterns specific to this survey wave rather than the customer base as a whole. The right next steps are to tune the threshold and features inside cross-validation, collect another round of survey data, and re-validate on it before leaning on the model for high-stakes retention decisions.
 
 ## Wrapping up
 

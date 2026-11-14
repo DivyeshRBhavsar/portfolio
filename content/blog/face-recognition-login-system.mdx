@@ -2,15 +2,15 @@
 title: "Building a Face Recognition Login System: My 6-Month Journey Into Machine Learning"
 date: "2023-10-13"
 author: "Divyesh Bhavsar"
+topic: "Machine Learning"
+level: "Beginner"
 tags: ["machine-learning", "computer-vision", "opencv", "python", "university-project"]
 summary: "How I built a facial-authentication login system as a university project — and what training a model on 100 face images taught me about how machine learning actually works."
 ---
 
-# Building a Face Recognition Login System: My 6-Month Journey Into Machine Learning
+Six months. That's how long it took me to go from "I want to build something with machine learning" to a working desktop application that logs you in by scanning your face instead of typing a password. This was my final project for my Master of Engineering at Memorial University of Newfoundland, and it ended up teaching me more about how ML models actually learn than any lecture slide ever did.
 
-Six months. That's how long it took me to go from "I want to build something with machine learning" to a working desktop application that logs you in by scanning your face instead of typing a password. This was my university project, and it ended up teaching me more about how ML models actually learn than any lecture slide ever did.
-
-You can find the full code here: [Face-Recognition-login-system](https://github.com/DivyeshRBhavsar/Face-Recognition-login-system).
+You can find the full code here: [Facial-Recognition-master](https://github.com/DivyeshRBhavsar/Facial-Recognition-master).
 
 In this post, I want to walk through how the system works, how I trained it on 100 images per user, and — more importantly — what the process taught me about training data, prediction, and the gap between "it works on my face" and "it works reliably."
 
@@ -104,9 +104,9 @@ elif percentage > 85:
     ...
 ```
 
-`predict()` doesn't just return a name — it returns a confidence value based on how close the input face's pattern is to what the model learned during training. That confidence score is the whole game. Set the threshold too loose and strangers get in; set it too tight and the legitimate user gets rejected because of a shadow or a new haircut. Tuning those numbers was less about coding and more about testing, failing, and adjusting — which is a very ML-flavored kind of debugging.
+`predict()` doesn't just return a name — it returns a score for how close the input face's pattern is to what the model learned during training. (Despite my variable name, it isn't a percentage: it's a distance, so **lower means a closer match**.) That score is the whole game. Anything under 65 counts as a match, anything over 85 is treated as a stranger, and in between the system simply keeps scanning instead of guessing. Set the threshold too loose and strangers get in; set it too tight and the legitimate user gets rejected because of a shadow or a new haircut. Tuning those numbers was less about coding and more about testing, failing, and adjusting — which is a very ML-flavored kind of debugging.
 
-Unrecognized faces get saved to an `UnknownFaces` folder for reference, and according to my testing, the recognizer held up to roughly 96% accuracy under normal lighting conditions.
+Unrecognized faces get saved to an `UnknownFaces` folder for reference. In my own testing under normal lighting, the recognizer was reliable: with two people in front of the camera, it picked out the registered user and labelled the other person as Unknown.
 
 ## What this taught me about machine learning in general
 
@@ -119,10 +119,10 @@ Going in, I understood "train a model" as a phrase from a textbook. Coming out t
 
 ## Honest limitations
 
-In the interest of not overselling this: it's a university project, and it has the rough edges you'd expect. The database credentials are hardcoded in the script rather than pulled from environment variables, passwords are stored in plain text rather than hashed, and the face storage path is a hardcoded local directory rather than something portable. None of that was the point of the assignment — the point was the ML pipeline — but if I were to harden this into something production-worthy, those would be the first three things I'd fix, followed by swapping LBPH for an embedding-based deep learning approach that generalizes better across lighting and angle changes.
+In the interest of not overselling this: it's a university project, and it has the rough edges you'd expect. Passwords are stored in plain text rather than hashed, the face storage path is a hardcoded local directory rather than something portable, and there's no liveness check, so a printed photo could fool it. (I've since moved the database credentials out of the code and into environment variables.) None of that was the point of the assignment — the point was the ML pipeline — but if I were to harden this into something production-worthy, those would be the first things I'd fix, followed by swapping LBPH for an embedding-based deep learning approach that generalizes better across lighting and angle changes.
 
 ## Wrapping up
 
 This project didn't just teach me OpenCV syntax — it gave me a mental model for the detect → collect data → train → predict loop that shows up in some form in almost every ML system I've touched since, including the classification and prediction projects I've built afterward. Sometimes the best way to actually understand a concept is to build the small, slightly rough version of it yourself.
 
-If you want to poke around the code, it's all here: [github.com/DivyeshRBhavsar/Face-Recognition-login-system](https://github.com/DivyeshRBhavsar/Face-Recognition-login-system).
+If you want to poke around the code, it's all here: [github.com/DivyeshRBhavsar/Facial-Recognition-master](https://github.com/DivyeshRBhavsar/Facial-Recognition-master).

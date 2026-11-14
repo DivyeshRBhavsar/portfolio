@@ -2,6 +2,9 @@
 title: "Building a Two-Layer Calling Model: From Raw Data to a Live Dashboard"
 summary: "A two-stage ML funnel (Logistic Regression + CatBoost, then XGBoost) that filters 40,000 customers down to a high-confidence call list, with a Power BI dashboard translating the results for both technical and non-technical stakeholders."
 date: "2026-07-19"
+author: "Divyesh Bhavsar"
+topic: "Machine Learning"
+level: "Intermediate"
 tags: ["machine-learning", "data-science", "power-bi", "python", "xgboost", "catboost"]
 repo: "https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY"
 ---
@@ -14,6 +17,8 @@ That's what this project became: not just a model, but a two-stage decision funn
 
 **Code:** [github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY](https://github.com/DivyeshRBhavsar/5qaNUcRSLjHZ5anY)
 
+**In short:** the funnel shrinks a 40,000-customer list to a final call list of 8,589, raises the conversion rate from 7.2% to 31.7% (about 4.4 times more subscribers per call), and still keeps 94% of all real subscribers on the list. The first layer alone removes about 560 hours of wasted calling time.
+
 ## The data
 
 The dataset: 40,000 rows from a term deposit marketing campaign, with the classic bank-marketing feature set — demographics (age, marital status, job, education, housing, loan), campaign details (contact channel, month, day, campaign count), and the outcome we care about, whether the customer said yes.
@@ -24,11 +29,11 @@ One deliberate design choice shaped everything downstream: **call duration is on
 
 Layer 1 is a stacked ensemble — Logistic Regression and CatBoost, blended by a meta-learner trained on out-of-fold predictions to avoid leakage between the base models and the stack. It uses only seven pre-contact features: day, month, contact channel, age, marital status, balance, and housing status.
 
-Validated across 5-fold cross-validation with consistent AUCs in every fold (no wild swings between splits — a basic but important check that the model isn't just fitting to a lucky train/test split), the final stack achieved:
+The base models were trained with 5-fold out-of-fold predictions, and the final stack reached a **test AUC of 0.729**. At the chosen threshold it achieved:
 
-- **96.1% recall on true "yes" customers** — of everyone who would have said yes, the model correctly flagged 96 out of every 100.
-- **9,110 true "no"s correctly filtered out**, with only **113 real subscribers missed** in the process.
-- **9.0% precision** — meaning roughly 1 in 11 people flagged actually converts. Low, but expected: the base conversion rate in this dataset is under 10%, so any model prioritizing recall over precision will look like this. That trade-off is inherent to the class imbalance, not a modeling mistake, and the dashboard says so explicitly rather than hiding behind the headline recall number.
+- **92.1% recall on true "yes" customers in the held-out test set** — of everyone who would have said yes, the model correctly flagged about 92 out of every 100. Across the full dataset the figure is 96.1%, but that includes rows the model was trained on, so the test number is the fair one.
+- **9,110 true "no"s correctly filtered out** across the full list, with only **113 real subscribers missed** (3.9%) — about **560 hours** of calling time saved, or 70 working days, at the average 3.7-minute non-subscriber call.
+- **About 9% precision** — meaning roughly 1 in 11 people flagged actually converts. Low, but expected: the base conversion rate in this dataset is under 10%, so any model prioritizing recall over precision will look like this. That trade-off is inherent to the class imbalance, not a modeling mistake, and the dashboard says so explicitly rather than hiding behind the headline recall number.
 
 One honest finding worth naming directly: the original target was 80% yes-recall **and** 50% no-recall simultaneously. Scanning every decision threshold from 0.05 to 0.79 showed those two floors were never jointly achievable — once no-recall climbs past 50%, yes-recall has already dropped well below 80%. The threshold that got selected (0.30) is the best available compromise, not a target that was actually hit. Rather than quietly picking a number and moving on, the dashboard surfaces this trade-off directly, with the full precision/recall curve plotted against the chosen threshold so anyone can see exactly where the compromise sits.
 
@@ -48,7 +53,7 @@ Once Layer 2 produces its final 8,589-person call list, there's still a meaningf
 
 With that caveat on the table, the 10 segments show real, usable spread — conversion rates range from 26.9% to 42.9% against a pool-wide average of 31.7%:
 
-- **Cluster 2 (515 customers, 42.9% conversion)** — the standout segment: divorced management professionals, mid-40s, contacted by cellular in March. Nearly 1.4x the pool average and roughly 4.8x the original raw baseline.
+- **Cluster 2 (515 customers, 42.9% conversion)** — the standout segment: divorced management professionals, mid-40s, contacted by cellular in March. Nearly 1.4x the pool average and roughly 6x the original raw baseline of 7.2%.
 - **Cluster 0 (834 customers, 37.2%)** — retired customers, married, the oldest average age in the pool and the highest balance among the top-performing segments, reached via telephone in June.
 - **Cluster 6 (1,118 customers, 34.1%)** — married management professionals with tertiary education and the highest average balance of any segment, contacted in August.
 - **Cluster 1 (1,728 customers, 26.9%)** — the largest segment in the entire pool, and the weakest performer: blue-collar, married, housing loan holders, contacted in May. Nearly a fifth of the entire call list sits in this lowest-converting group.

@@ -1,0 +1,95 @@
+---
+title: "The Score Nobody Gave: What Fine-Tuning a 3B Model on Recruiter Judgments Taught Me"
+date: "2026-11-14"
+author: "Divyesh Bhavsar"
+summary: "I fine-tuned Qwen2.5-3B to score job candidates like a recruiter. The most useful lessons didn't come from the model. They came from a gap in the labels, a surprising feature, and one cheap experiment."
+topic: "NLP & LLMs"
+level: "Intermediate"
+tags: ["QLoRA", "Qwen", "RAG", "Fine-tuning", "Evaluation"]
+---
+
+A recruiter can glance at a one-line profile, something like *"ms in data analytics, northeastern university, open to data roles"*, and form a judgment in seconds. That judgment is the most valuable thing a talent firm has. It's also invisible: it lives in people's heads, it doesn't scale to thousands of applicants, and nobody can audit it.
+
+As an AI Resident with Apziva, I worked on a real client project for a talent sourcing company that wanted to capture that judgment. The brief was simple to say and hard to do: build a pipeline that understands candidates, scores how well they fit, ranks them, and learns from the reviewers who use it.
+
+I built it in three stages: an LLM that **reads** messy profiles, a fine-tuned model that **judges** them, and a retrieval layer that helps it **know when it's out of its depth**. The full technical write-up is in the repository. This post is about the three moments that taught me the most.
+
+## The setup, in one paragraph
+
+Each candidate was a short, messy text profile with a screening score from 0 to 100, assigned by the firm's reviewers. First, a few-shot prompt to Qwen2.5-3B-Instruct turned every profile into clean JSON (job title, experience, education, other info), with zero parsing errors across 1,266 candidates. Then I fine-tuned Qwen2.5-3B with QLoRA as a regression model: the base model frozen in 4-bit, small LoRA adapters trained on top, and a single-output head predicting the score. Only 0.96% of the 3.1 billion parameters were trained, which is what made it possible on free Kaggle GPUs.
+
+On the untouched test set, the model cut the error of a naive baseline by about 45% (a mean absolute error of 16.57 points, down from 30.25) and reached a Spearman correlation of 0.548 with the reviewers' ranking. A clear improvement, but not production-grade. The interesting part is *why*.
+
+## Lesson 1: Nobody scored between 40 and 60
+
+When I looked at the distribution of the reviewers' scores, I expected a smooth spread. Instead, the scores clustered in two groups: 20 to 40, and 80 to 100. Not a single training candidate scored between 40 and 60.
+
+The reviewers weren't grading on a scale at all. They were sorting people into **strong** and **weak**, and then writing down a number.
+
+That one plot explained more about my model's errors than any hyperparameter search could have. When the model picked the right tier, it was usually close. When it picked the wrong tier, the miss was at least 40 points. The worst 10% of test predictions accounted for a third of all the error.
+
+It also changed how I read the metrics. A mean absolute error of 16.6 sounds mediocre on a 100-point scale. On a two-tier target, it means the model gets the tier right most of the time and pays heavily for the cases it doesn't.
+
+There was a second surprise hiding in the labels: twenty identical input texts appeared more than once in training, with **different scores**. Same profile, different judgment. No model can get below that noise floor, however clever it is.
+
+> **Takeaway:** look at the label distribution before you choose a loss, a metric or a model. The labels are the problem definition.
+
+Because the scores were evaluated with mean absolute error, I also wrote a small custom trainer that optimises MAE directly instead of the default squared error. Training on the number you'll be judged by is a small change that removes a whole class of surprises.
+
+## Lesson 2: The model cared most about location
+
+Once the model worked, I wanted to know what it had learned. I used permutation importance: shuffle one field across the validation set, and measure how much worse the predictions get.
+
+| Field shuffled | How much the error grows |
+|---|---|
+| Location | +7.32 |
+| Job title | +5.26 |
+| Experience | +1.06 |
+| Education | +0.80 |
+| Other info | +0.71 |
+
+Location mattered more than anything else, more than the job title, and far more than experience or education.
+
+I could see it on a single person, too. For one test candidate, a data analyst profile scored 79.5. Removing their education barely changed the score. Removing their location dropped it to 62.5.
+
+This is a faithful reflection of the training labels, not a design choice. But it's exactly the kind of finding that matters more than the accuracy number. Location can act as a proxy for characteristics that must never influence hiring decisions. If this model went anywhere near real use, auditing that behaviour would be the very first job.
+
+> **Takeaway:** a model trained on human decisions learns human patterns, including the ones nobody wrote down. Taking the model apart is part of the work, not an optional extra.
+
+It's also why I framed the whole system as **decision support**. Every candidate in the firm's process is still reviewed by a person. The model's job is to help them prioritise and question, never to reject anyone automatically.
+
+## Lesson 3: Retrieval doesn't have to mean generation
+
+The third stage was the most fun to design. "RAG" usually means fetching documents so a language model can write an answer. But my model outputs a number, not text. So what is retrieval for?
+
+It turned out to do three useful jobs:
+
+1. **Calibration.** Find the five most similar past candidates and blend their scores with the model's own prediction. I tuned the blend on the validation set, and both vector stores I tried independently chose 80% model, 20% neighbours.
+2. **A confidence signal.** If even the closest past candidate isn't very similar, the model is extrapolating, so the prediction gets flagged for a closer human look.
+3. **Evidence.** Instead of a bare score of 81, the recruiter sees the actual past candidates this person resembles, with their real scores. That's something they can check and argue with.
+
+My favourite detail: I didn't need a separate embedding model. The regression head reads the hidden state of the last token, so I pulled that same vector out of the same forward pass that produces the score. The embedding comes for free, and "similar" means *similar in the ways the model uses to judge*.
+
+The honest result? Blending left the average error essentially flat, trimmed the largest errors (RMSE dropped by about 3%), and nudged the ranking correlation up to 0.577. The real value wasn't the headline number. It was the explanations and the confidence flag, which is what makes a score usable by a person.
+
+I built the retrieval layer twice, once with FAISS and once with ChromaDB, to compare them. FAISS is fast and minimal. ChromaDB stores metadata alongside each vector, which maps neatly onto how recruiters actually search: "only compare this person to other engineering managers".
+
+## The cheapest experiment I ran
+
+At one point I suspected that a particular way of tagging experience in the extracted JSON was hurting the model. The obvious test was to change it and retrain the 3B model, which costs hours of GPU time.
+
+Instead, I ran the same experiment with TF-IDF and a Ridge regression. It took seconds. It said the tag wasn't the problem. That saved a full training run.
+
+> **Takeaway:** before an expensive experiment, look for a cheap one that answers the same question. Simple baselines aren't just for comparison tables.
+
+## What I'd do differently
+
+- **More labelled data, especially for rare roles.** 1,266 candidates spread across 260 job titles means most titles have only a handful of examples. This is the main limit on accuracy, and the pipeline doesn't need to change to benefit from more data.
+- **Treat the target as what it really is.** Given the two tiers, a classification framing (strong or weak, plus a confidence) might serve recruiters better than a 0–100 regression.
+- **Audit location first,** before adding any new features.
+
+## What's next: learning from the star button
+
+The most interesting part of the brief is still ahead. When a reviewer **stars** the ideal candidate for a role, the list should re-rank itself around that choice. The retrieval layer was designed with this in mind: every candidate already lives in the model's own judgment space, so a starred candidate can become an anchor, and each new star moves the ranking closer to what the reviewer actually wants.
+
+If you'd like to dig into the details, the notebooks are on GitHub, and the trained adapter is public on Hugging Face. And if you're working on something similar, I'd love to compare notes.

@@ -230,23 +230,314 @@ html[data-stage] body {
 }
 
 /* ---------- Projects page: list view / story mode ----------
-   <html data-projects-view> is set before first paint (components/projects/viewStore.ts),
-   so the saved view shows at once. Default (no attribute): the list. */
-.projects-story-view {
-  display: none;
-}
-html[data-projects-view='story'] .projects-story-view {
-  display: block;
-}
-html[data-projects-view='story'] .projects-list-view {
-  display: none;
-}
+   <html data-projects-view="story"> = story mode's overlay is open. Set before first
+   paint by the layout's script (components/projects/viewScript.ts), then by ProjectsView,
+   so a story link or saved story mode shows the overlay at once. */
 .projects-view-btn {
   @apply border-2 border-transparent text-ink hover:bg-sun/40;
 }
 html:not([data-projects-view='story']) .projects-view-btn[data-view='list'],
 html[data-projects-view='story'] .projects-view-btn[data-view='story'] {
   @apply border-ink bg-sun text-on-sun hover:bg-sun;
+}
+
+/* The overlay: fixed full screen, the theme's page colour, safe-area padding. The page
+   underneath can't scroll (useScrollLock.ts pins the body once React is running). */
+html[data-projects-view='story'] {
+  overflow: hidden;
+}
+.story-overlay {
+  display: none;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  padding: max(0.75rem, env(safe-area-inset-top)) max(0.75rem, env(safe-area-inset-right))
+    max(0.75rem, env(safe-area-inset-bottom)) max(0.75rem, env(safe-area-inset-left));
+}
+html[data-projects-view='story'] .story-overlay {
+  display: flex;
+}
+@media (min-width: 640px) and (min-height: 500px) {
+  .story-overlay {
+    padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))
+      max(1.25rem, env(safe-area-inset-bottom)) max(1.25rem, env(safe-area-inset-left));
+  }
+}
+
+/* The theatre. Keep the media queries in step with components/projects/useStoryLayout.ts.
+   Landscape: slide ~72% left, Luffy column right, controls along the bottom. */
+.story-theatre {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(0, 72fr) minmax(0, 28fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'slide luffy'
+    'controls controls';
+  gap: 1rem 1.25rem;
+}
+.st-slide {
+  grid-area: slide;
+  min-width: 0;
+  min-height: 0;
+  touch-action: pan-y;
+}
+.st-luffy {
+  grid-area: luffy;
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.st-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.st-narrator {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.9rem;
+}
+.st-head {
+  width: 5rem;
+  height: 5rem;
+}
+.st-narrator .story-bubble {
+  display: flex;
+  width: 100%;
+  min-height: 0;
+  max-height: 100%;
+  flex-direction: column;
+}
+.st-controls {
+  grid-area: controls;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.st-nav {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.25rem;
+}
+.st-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+.st-compact {
+  display: none;
+}
+
+/* Luffy's story-mode bubble. Tail up at his head (or left, beside it). */
+.story-bubble-text {
+  min-height: 0;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+.story-bubble::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: calc(50% - 7px);
+  width: 14px;
+  height: 14px;
+  border-left: 2px solid rgb(var(--c-ink));
+  border-top: 2px solid rgb(var(--c-ink));
+  background: rgb(var(--c-surface));
+  transform: rotate(45deg);
+}
+.story-bubble[data-tail='left']::before {
+  top: 16px;
+  left: -9px;
+  transform: rotate(-45deg);
+}
+
+/* Narrower landscape screens (tablets): a little more room for the slide. */
+@media (orientation: landscape) and (max-width: 1199px) and (min-height: 500px) {
+  .story-theatre {
+    grid-template-columns: minmax(0, 76fr) minmax(0, 24fr);
+    gap: 0.75rem 1rem;
+  }
+  .st-head {
+    width: 4rem;
+    height: 4rem;
+  }
+  .st-narrator .story-bubble-text {
+    font-size: 0.9375rem;
+  }
+}
+
+/* Portrait phones (and portrait tablets): Luffy strip on top (56 px head, bubble beside
+   it, max 3 lines), the slide in the middle, controls at the bottom. */
+@media (orientation: portrait) and (max-width: 899px) {
+  .story-theatre {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    grid-template-areas: 'luffy' 'slide' 'controls';
+    gap: 0.5rem;
+  }
+  .st-luffy {
+    flex-direction: row-reverse;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .st-narrator {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  .st-head {
+    width: 56px;
+    height: 56px;
+  }
+  .st-narrator .story-bubble {
+    flex: 1;
+    min-width: 0;
+  }
+  .story-bubble[data-tail='auto']::before {
+    top: 16px;
+    left: -9px;
+    transform: rotate(-45deg);
+  }
+  .st-narrator .story-bubble-text {
+    max-height: calc(3 * 1.4em + 1rem);
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+  .st-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+  .st-nav {
+    justify-content: space-between;
+  }
+  .st-actions {
+    justify-content: center;
+  }
+}
+
+/* Short landscape (phones on their side): slim Luffy column (~20%), smaller head and
+   bubble text, a tight one-row controls bar, so the slide gets the most room. */
+@media (orientation: landscape) and (max-height: 499px) {
+  .story-overlay {
+    padding: max(0.375rem, env(safe-area-inset-top)) max(0.5rem, env(safe-area-inset-right))
+      max(0.375rem, env(safe-area-inset-bottom)) max(0.5rem, env(safe-area-inset-left));
+  }
+  .story-theatre {
+    grid-template-columns: minmax(0, 80fr) minmax(0, 20fr);
+    gap: 0.375rem 0.5rem;
+  }
+  .st-luffy {
+    gap: 0.375rem;
+  }
+  .st-top {
+    justify-content: center;
+    gap: 0.25rem;
+  }
+  .st-narrator {
+    gap: 0.5rem;
+  }
+  .st-head {
+    width: 40px;
+    height: 40px;
+  }
+  .st-narrator .story-bubble-text {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+  }
+  .st-controls {
+    gap: 0.375rem;
+  }
+  .st-nav {
+    flex: 1;
+  }
+  .st-actions {
+    flex-wrap: nowrap;
+    gap: 0.25rem;
+  }
+}
+@media (orientation: portrait) and (max-width: 899px), (orientation: landscape) and (max-height: 499px) {
+  .st-wide {
+    display: none;
+  }
+  .st-compact {
+    display: inline-flex;
+  }
+}
+
+/* The slide canvas: type and spacing in canvas pixels, scaled with the whole slide
+   (components/projects/SlideCanvas.tsx). --fit (1, or down to 0.8) is the autofit for a
+   slide that would otherwise be taller than its canvas. */
+.story-canvas {
+  --s-pad: calc(52px * var(--fit, 1));
+  --s-gap: calc(24px * var(--fit, 1));
+  --s-hero: calc(68px * var(--fit, 1));
+  --s-title: calc(42px * var(--fit, 1));
+  --s-sub: calc(30px * var(--fit, 1));
+  --s-body: calc(25px * var(--fit, 1));
+  --s-small: calc(21px * var(--fit, 1));
+  --s-metric: calc(48px * var(--fit, 1));
+  --s-bar: calc(28px * var(--fit, 1));
+  font-size: var(--s-body);
+  line-height: 1.45;
+}
+.story-canvas[data-canvas='portrait'] {
+  --s-pad: calc(44px * var(--fit, 1));
+  --s-gap: calc(26px * var(--fit, 1));
+  --s-hero: calc(70px * var(--fit, 1));
+  --s-title: calc(46px * var(--fit, 1));
+  --s-sub: calc(32px * var(--fit, 1));
+  --s-body: calc(28px * var(--fit, 1));
+  --s-small: calc(23px * var(--fit, 1));
+  --s-metric: calc(50px * var(--fit, 1));
+  --s-bar: calc(30px * var(--fit, 1));
+}
+.story-canvas[data-canvas='short'] {
+  --s-pad: calc(26px * var(--fit, 1));
+  --s-gap: calc(14px * var(--fit, 1));
+  --s-hero: calc(54px * var(--fit, 1));
+  --s-title: calc(32px * var(--fit, 1));
+  --s-sub: calc(24px * var(--fit, 1));
+  --s-body: calc(24px * var(--fit, 1));
+  --s-small: calc(20px * var(--fit, 1));
+  --s-metric: calc(36px * var(--fit, 1));
+  --s-bar: calc(22px * var(--fit, 1));
+}
+.story-canvas-scroll {
+  border-radius: inherit;
+}
+
+/* "focus": the metric card or bar Luffy is talking about, while his narration types. */
+.story-focus {
+  outline: 4px solid rgb(var(--c-red-deep));
+  outline-offset: 4px;
+  animation: story-focus-pulse 1.6s ease-in-out infinite;
+}
+@keyframes story-focus-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(var(--c-red-deep) / 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgb(var(--c-red-deep) / 0);
+  }
 }
 
 html[data-stage-failsafe] .stage-loading,
@@ -364,7 +655,8 @@ html {
   .stage-backdrop,
   .stage-star,
   .stage-bounce,
-  .typing-dot {
+  .typing-dot,
+  .story-focus {
     animation: none !important;
   }
 }

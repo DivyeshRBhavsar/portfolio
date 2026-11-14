@@ -1,11 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutGrid, Pause, Play } from 'lucide-react';
 import AskLuffyPanel from '@/components/character/AskLuffyPanel';
-import ChatBubble from '@/components/character/ChatBubble';
-import IntentChips, { type Chip } from '@/components/character/IntentChips';
 import LuffyHead from '@/components/character/LuffyHead';
 import {
   slideCounterLabel,
@@ -19,9 +17,13 @@ import { fill, pick } from '@/components/character/speech';
 import { useConversation } from '@/components/character/useConversation';
 import { saveStoryProgress } from '@/components/character/visitorMemory';
 import { isTodo, usableUrl, type Story } from '@/lib/storyTypes';
+import FullscreenButton from './FullscreenButton';
+import { theatreButton } from './theatreButton';
+import NarrationBubble from './NarrationBubble';
+import SlideCanvas, { CanvasFit } from './SlideCanvas';
 import SlideBody from './slides/SlideBody';
-import StoryText from './StoryText';
 import { useSlideHash } from './useSlideHash';
+import { useStoryLayout } from './useStoryLayout';
 import { useSwipe } from './useSwipe';
 
 /** Autoplay moves on this long after the narration finishes typing. */
@@ -32,51 +34,55 @@ const NARRATION_DELAY_MS = 250;
 const SLIDE_OUT_S = 0.11;
 const SLIDE_IN_S = 0.16;
 
-const controlButton =
-  'inline-flex min-h-11 min-w-11 items-center justify-center gap-1.5 rounded-full border-2 border-ink bg-surface px-3 text-sm font-medium text-ink transition-colors hover:bg-sun hover:text-on-sun disabled:cursor-not-allowed disabled:border-ink/20 disabled:text-ink-muted disabled:hover:bg-surface';
-
 /**
- * One project story as slides, with Luffy narrating each one beside it. The slide
- * number lives in the URL hash (#3). Keyboard: ← →, Space for next, Esc to close.
+ * One project story as a presentation inside the story-mode overlay: the slide (on a
+ * fixed canvas, scaled to fit), Luffy narrating beside or above it, and the controls
+ * along the bottom. Layouts: .story-theatre in app/globals.css. The slide number lives in
+ * the URL hash (#3). Keyboard: ← →, Space for next (Esc closes: the overlay's focus trap).
  * Swipe left/right on touch screens.
  */
 export default function StoryPlayer({
   story,
   nextStory,
-  focusOnOpen,
+  overlayRef,
   onOpenStory,
+  onAllStories,
   onClose,
-  onBackToList,
+  onAskOpenChange,
 }: {
   story: Story;
   /** For "Next project" (null hides it). */
   nextStory: Story | null;
-  /** Opened by the visitor on this page (not a direct link): move focus to the story. */
-  focusOnOpen: boolean;
+  /** The overlay (for full screen). */
+  overlayRef: RefObject<HTMLElement | null>;
   onOpenStory: (slug: string) => void;
+  onAllStories: () => void;
   onClose: () => void;
-  onBackToList: () => void;
+  /** The Ask Luffy panel opened or closed (the overlay's focus trap stands aside). */
+  onAskOpenChange: (open: boolean) => void;
 }) {
   const total = story.slides.length;
   const [slide, setSlide] = useSlideHash(total);
+  const layout = useStoryLayout();
   const reducedMotion = !!useReducedMotion();
   const animate = !reducedMotion;
 
-  const regionRef = useRef<HTMLElement>(null);
   const swipeRef = useRef<HTMLDivElement>(null);
-  const bubbleRef = useRef<HTMLDivElement>(null);
+  const controlsRef = useRef<HTMLDivElement>(null);
   const [direction, setDirection] = useState(1);
   const [autoplay, setAutoplay] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   /** Which slide Luffy's current narration belongs to. */
   const [narratedSlide, setNarratedSlide] = useState<number | null>(null);
 
-  const conversation = useConversation({ maxVisible: 2 });
+  const conversation = useConversation({ maxVisible: 1 });
   const { say, reset, busy } = conversation;
 
   const current = story.slides[slide - 1];
   const isLast = slide === total;
+  const narrating = narratedSlide === slide && busy;
   const narrationDone = narratedSlide === slide && !busy;
+  const endReady = isLast && conversation.prompt === 'chips';
 
   /* ---------- Moving between slides ---------- */
 
@@ -132,21 +138,14 @@ export default function StoryPlayer({
     };
   }, [story.title]);
 
-  useEffect(() => {
-    if (!focusOnOpen) return;
-    regionRef.current?.focus({ preventScroll: true });
-  }, [focusOnOpen]);
-
   /* ---------- Keyboard and swipe ---------- */
 
   useEffect(() => {
-    if (askOpen) return; // the panel has the keyboard (its Esc closes it)
+    if (askOpen) return; // the panel has the keyboard
     const onKey = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
       const target = event.target instanceof HTMLElement ? event.target : null;
-      if (target?.closest('input, textarea, select, [contenteditable="true"], [role="dialog"]')) {
-        return;
-      }
+      if (target?.closest('input, textarea, select, [contenteditable="true"]')) return;
       if (event.key === 'ArrowRight') {
         event.preventDefault();
         next();
@@ -158,175 +157,179 @@ export default function StoryPlayer({
         if (target?.closest('button, a')) return;
         event.preventDefault();
         next();
-      } else if (event.key === 'Escape') {
-        event.preventDefault();
-        onClose();
       }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [askOpen, next, back, onClose]);
+  }, [askOpen, next, back]);
 
   useSwipe(swipeRef, { onLeft: next, onRight: back });
 
-  /* ---------- End of story ---------- */
-
-  const endChips: Chip[] = [
-    ...(nextStory
-      ? [
-          {
-            key: 'next',
-            label: storyControls.nextProject,
-            onSelect: () => onOpenStory(nextStory.slug),
-          },
-        ]
-      : []),
-    { key: 'ask', label: storyControls.askLuffy, onSelect: () => setAskOpen(true) },
-    { key: 'list', label: storyControls.backToList, onSelect: onBackToList },
-  ];
+  const setAsk = (open: boolean) => {
+    setAskOpen(open);
+    onAskOpenChange(open);
+  };
 
   const counter = fill(slideCounterLabel, { n: String(slide), total: String(total) });
   const repoUrl = usableUrl(story.repo) ? story.repo : null;
 
   return (
     <section
-      ref={regionRef}
-      tabIndex={-1}
       aria-label={fill(storyRegionLabel, { title: story.title })}
       data-visit-label={story.title}
-      className="outline-none"
+      className="story-theatre"
     >
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-display text-xl font-semibold text-ink">
-          <StoryText text={story.title} />
-        </h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label={storyControlLabels.close}
-          className={controlButton}
-        >
-          {storyControls.close}
-        </button>
-      </div>
-
       <p className="sr-only" aria-live="polite">
         {counter}: {current.title}
       </p>
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_16rem] lg:items-start">
-        {/* Luffy: above the slide on mobile, in the corner beside it on wide screens. */}
-        <div className="flex flex-col items-center gap-4 lg:order-2 lg:sticky lg:top-24">
-          <LuffyHead talking={busy && animate} className="h-16 w-16 sm:h-20 sm:w-20" />
-          <div ref={bubbleRef} tabIndex={-1} className="w-full max-w-md outline-none">
-            {conversation.visible.length > 0 && (
-              <ChatBubble
-                messages={conversation.visible}
-                announced={conversation.log}
-                animate={animate}
-              >
-                {conversation.prompt === 'chips' && (
-                  <IntentChips chips={endChips} animate={animate} />
-                )}
-              </ChatBubble>
-            )}
-          </div>
+      <div ref={swipeRef} className="st-slide">
+        <SlideCanvas layout={layout}>
+          <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={slide}
+              custom={direction}
+              variants={{
+                enter: (d: number) => ({ x: d * 40, opacity: 0 }),
+                center: { x: 0, opacity: 1, transition: { duration: animate ? SLIDE_IN_S : 0 } },
+                exit: (d: number) => ({
+                  x: d * -40,
+                  opacity: 0,
+                  transition: { duration: animate ? SLIDE_OUT_S : 0 },
+                }),
+              }}
+              initial={animate ? 'enter' : false}
+              animate="center"
+              exit="exit"
+              className="min-h-full"
+            >
+              <CanvasFit>
+                <SlideBody slide={current} story={story} animate={animate} focusing={narrating} />
+              </CanvasFit>
+            </motion.div>
+          </AnimatePresence>
+        </SlideCanvas>
+      </div>
+
+      <div className="st-luffy">
+        <div className="st-top">
+          <FullscreenButton target={overlayRef} className={theatreButton} />
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={storyControlLabels.close}
+            className={theatreButton}
+          >
+            <span className="st-wide">{storyControls.close}</span>
+            <span className="st-compact" aria-hidden="true">
+              {storyControls.closeShort}
+            </span>
+          </button>
+        </div>
+        <div className="st-narrator">
+          <LuffyHead talking={busy && animate} className="st-head" />
+          {conversation.visible.length > 0 && (
+            <NarrationBubble messages={conversation.visible} announced={conversation.log} />
+          )}
+        </div>
+      </div>
+
+      <div ref={controlsRef} className="st-controls">
+        <div className="st-nav">
+          <button
+            type="button"
+            onClick={back}
+            disabled={slide === 1}
+            aria-label={storyControlLabels.back}
+            className={theatreButton}
+          >
+            <ChevronLeft size={18} aria-hidden="true" />
+            <span className="st-wide">{storyControls.back}</span>
+          </button>
+
+          <ol aria-label={storyControlLabels.dots} className="flex min-w-0 flex-1 justify-center">
+            {story.slides.map((_, i) => {
+              const n = i + 1;
+              return (
+                <li key={n} className="flex min-w-0 shrink">
+                  <button
+                    type="button"
+                    onClick={() => goTo(n)}
+                    aria-label={fill(storyControlLabels.dot, { n: String(n) })}
+                    aria-current={n === slide ? 'step' : undefined}
+                    className="group flex h-11 w-11 min-w-6 shrink items-center justify-center"
+                  >
+                    <span
+                      className={`block h-2.5 rounded-full transition-all ${
+                        n === slide
+                          ? 'w-6 bg-red'
+                          : 'w-2.5 bg-ink-muted/50 group-hover:bg-ink-muted'
+                      }`}
+                    />
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+
+          <button
+            type="button"
+            onClick={next}
+            disabled={isLast}
+            aria-label={storyControlLabels.next}
+            className={theatreButton}
+          >
+            <span className="st-wide">{storyControls.next}</span>
+            <ChevronRight size={18} aria-hidden="true" />
+          </button>
         </div>
 
-        <div className="relative flex min-h-[26rem] flex-col rounded-2xl border-2 border-ink bg-surface shadow-sticker lg:order-1">
-          <div
-            ref={swipeRef}
-            className="flex-1 overflow-hidden px-5 py-6 sm:px-8 [touch-action:pan-y]"
-          >
-            <AnimatePresence mode="wait" initial={false} custom={direction}>
-              <motion.div
-                key={slide}
-                custom={direction}
-                variants={{
-                  enter: (d: number) => ({ x: d * 28, opacity: 0 }),
-                  center: { x: 0, opacity: 1, transition: { duration: animate ? SLIDE_IN_S : 0 } },
-                  exit: (d: number) => ({
-                    x: d * -28,
-                    opacity: 0,
-                    transition: { duration: animate ? SLIDE_OUT_S : 0 },
-                  }),
-                }}
-                initial={animate ? 'enter' : false}
-                animate="center"
-                exit="exit"
-                className="h-full"
-              >
-                <SlideBody slide={current} story={story} animate={animate} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-
-          {/* Controls stay at the bottom of the slide area (sticky on long slides). */}
-          <div className="sticky bottom-0 z-10 rounded-b-2xl border-t-2 border-ink/10 bg-surface px-3 py-3 sm:px-5">
-            <div className="flex items-center justify-between gap-2">
+        <div className="st-actions">
+          {endReady ? (
+            <>
+              {nextStory && (
+                <button
+                  type="button"
+                  onClick={() => onOpenStory(nextStory.slug)}
+                  className={theatreButton}
+                >
+                  {storyControls.nextProject}
+                </button>
+              )}
+              <button type="button" onClick={() => setAsk(true)} className={theatreButton}>
+                {storyControls.askLuffy}
+              </button>
+              <button type="button" onClick={onClose} className={theatreButton}>
+                {storyControls.backToList}
+              </button>
+            </>
+          ) : (
+            <>
               <button
                 type="button"
-                onClick={back}
-                disabled={slide === 1}
-                aria-label={storyControlLabels.back}
-                className={controlButton}
+                onClick={onAllStories}
+                aria-label={storyControlLabels.allStories}
+                className={theatreButton}
               >
-                <ChevronLeft size={18} aria-hidden="true" />
-                <span className="hidden sm:inline">{storyControls.back}</span>
+                <LayoutGrid size={16} aria-hidden="true" className="st-compact" />
+                <span className="st-wide">{storyControls.allStories}</span>
               </button>
-
-              <ol aria-label={storyControlLabels.dots} className="flex flex-wrap justify-center">
-                {story.slides.map((_, i) => {
-                  const n = i + 1;
-                  return (
-                    <li key={n}>
-                      <button
-                        type="button"
-                        onClick={() => goTo(n)}
-                        aria-label={fill(storyControlLabels.dot, { n: String(n) })}
-                        aria-current={n === slide ? 'step' : undefined}
-                        className="group flex h-11 min-w-[1.375rem] items-center justify-center"
-                      >
-                        <span
-                          className={`block h-2.5 rounded-full transition-all ${
-                            n === slide
-                              ? 'w-6 bg-red'
-                              : 'w-2.5 bg-ink-muted/50 group-hover:bg-ink-muted'
-                          }`}
-                        />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ol>
-
-              <button
-                type="button"
-                onClick={next}
-                disabled={isLast}
-                aria-label={storyControlLabels.next}
-                className={controlButton}
-              >
-                <span className="hidden sm:inline">{storyControls.next}</span>
-                <ChevronRight size={18} aria-hidden="true" />
-              </button>
-            </div>
-
-            <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => setAutoplay((on) => !on && !isLast)}
                 disabled={isLast}
                 aria-pressed={autoplay}
                 aria-label={autoplay ? storyControlLabels.pause : storyControlLabels.autoplay}
-                className={controlButton}
+                className={theatreButton}
               >
                 {autoplay ? (
                   <Pause size={16} aria-hidden="true" />
                 ) : (
                   <Play size={16} aria-hidden="true" />
                 )}
-                {autoplay ? storyControls.pause : storyControls.autoplay}
+                <span className="st-wide">
+                  {autoplay ? storyControls.pause : storyControls.autoplay}
+                </span>
               </button>
               {repoUrl && (
                 <a
@@ -334,16 +337,16 @@ export default function StoryPlayer({
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label={storyControlLabels.openRepo}
-                  className={controlButton}
+                  className={theatreButton}
                 >
                   {storyControls.openRepo}
                 </a>
               )}
-              <span aria-hidden="true" className="font-mono text-xs text-ink-muted">
-                {slide} / {total}
-              </span>
-            </div>
-          </div>
+            </>
+          )}
+          <span aria-hidden="true" className="st-wide font-mono text-xs text-ink-muted">
+            {slide} / {total}
+          </span>
         </div>
       </div>
 
@@ -351,8 +354,8 @@ export default function StoryPlayer({
         <AskLuffyPanel
           placement="corner"
           reducedMotion={reducedMotion}
-          onClose={() => setAskOpen(false)}
-          returnFocus={() => bubbleRef.current}
+          onClose={() => setAsk(false)}
+          returnFocus={() => controlsRef.current?.querySelector<HTMLElement>('button') ?? null}
         />
       )}
     </section>

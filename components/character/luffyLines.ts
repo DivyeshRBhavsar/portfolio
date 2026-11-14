@@ -294,6 +294,10 @@ export const storyControls = {
   pause: "Pause",
   openRepo: "Open the repo ↗",
   close: "✕ Back to projects",
+  closeShort: "✕",
+  allStories: "← All stories",
+  fullScreen: "⛶ Full screen",
+  exitFullScreen: "⛶ Exit full screen",
   nextProject: "Next project →",
   askLuffy: "💬 Ask Luffy",
   backToList: "📋 Back to list",
@@ -306,7 +310,12 @@ export const storyControlLabels = {
   dots: "Slides",
   dot: "Go to slide {n}",
   openRepo: "Open the repo on GitHub (opens in a new tab)",
-  close: "Close the story and go back to the projects",
+  close: "Close story mode and go back to the projects list",
+  allStories: "Show all project stories",
+  fullScreen: "Show story mode full screen",
+  exitFullScreen: "Leave full screen",
 };
+// The story-mode overlay's name for screen readers (a story's uses storyRegionLabel)
+export const storyModeLabel = "Story mode with Luffy: project stories";
 export const slideCounterLabel = "Slide {n} of {total}";
 export const storyRegionLabel = "Project story: {title}";

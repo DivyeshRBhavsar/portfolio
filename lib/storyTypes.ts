@@ -8,12 +8,19 @@ export type Metric = { label: string; value: string };
 export type Bar = { label: string; value: number; highlight?: boolean };
 export type Step = { label: string; detail: string };
 
+/**
+ * What Luffy is talking about: while the slide's narration types, this metric card or
+ * bar (0-based index into the slide's metrics or bars) gets a gentle highlight.
+ */
+export type SlideFocus = { metric: number } | { bar: number };
+
 /** Any slide can also carry metric cards and/or bullets below its main content. */
 type SlideBase = {
   /** Luffy's line for this slide. */
   narration: string;
   metrics?: Metric[];
   bullets?: string[];
+  focus?: SlideFocus;
 };
 
 export type TitleSlide = SlideBase & { type: 'title'; title: string; subtitle?: string };

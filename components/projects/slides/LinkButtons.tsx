@@ -10,14 +10,14 @@ export default function LinkButtons({ repo, links }: { repo: string; links: Stor
   if (buttons.length === 0) return null;
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-[0.5em]">
       {buttons.map((link, i) => (
         <a
           key={link.url}
           href={link.url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`inline-flex min-h-11 items-center rounded-full border-2 border-ink px-5 py-2 text-sm font-medium transition-all hover:-translate-y-0.5 hover:shadow-sticker ${
+          className={`inline-flex items-center rounded-full border-[3px] border-ink px-[0.9em] py-[0.4em] text-[length:var(--s-small)] font-medium transition-colors ${
             i === 0 ? 'bg-red text-white' : 'bg-surface text-ink hover:bg-sun hover:text-on-sun'
           }`}
         >

@@ -8,7 +8,8 @@ export type { ProjectsViewName };
 let current: ProjectsViewName | null = null;
 const listeners = new Set<() => void>();
 
-function readSaved(): ProjectsViewName {
+/** The saved view, straight from storage (also during hydration). */
+export function readSavedProjectsView(): ProjectsViewName {
   try {
     return window.localStorage.getItem(VIEW_KEY) === 'story' ? 'story' : 'list';
   } catch {
@@ -43,7 +44,7 @@ export function useClientReady(): boolean {
 export function useSavedProjectsView(): ProjectsViewName {
   return useSyncExternalStore(
     subscribe,
-    () => (current ??= readSaved()),
+    () => (current ??= readSavedProjectsView()),
     () => 'list'
   );
 }

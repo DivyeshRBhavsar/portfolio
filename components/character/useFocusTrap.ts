@@ -10,17 +10,32 @@ const FOCUSABLE =
  * the dialog's label first), Tab and Shift+Tab cycle inside it, focus that escapes
  * (a click elsewhere) is brought back, and Esc calls onEscape. On unmount, focus goes
  * back to what had it before, or to `fallback` if that element is gone.
+ *
+ * `active` (default true) turns the trap on and off without unmounting (off = focus
+ * goes back). `paused` keeps it on but stands aside, e.g. while a dialog opened above
+ * it has its own trap.
  */
 export function useFocusTrap(
   ref: RefObject<HTMLElement | null>,
-  { onEscape, fallback }: { onEscape: () => void; fallback?: () => HTMLElement | null }
+  {
+    onEscape,
+    fallback,
+    active = true,
+    paused = false,
+  }: {
+    onEscape: () => void;
+    fallback?: () => HTMLElement | null;
+    active?: boolean;
+    paused?: boolean;
+  }
 ) {
   const escape = useEffectEvent(onEscape);
   const getFallback = useEffectEvent(() => fallback?.() ?? null);
+  const isPaused = useEffectEvent(() => paused);
 
   useEffect(() => {
     const node = ref.current;
-    if (!node) return;
+    if (!node || !active) return;
     const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const items = () =>
@@ -31,6 +46,7 @@ export function useFocusTrap(
     node.focus({ preventScroll: true });
 
     const onKey = (event: KeyboardEvent) => {
+      if (isPaused()) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         event.stopPropagation();
@@ -58,6 +74,7 @@ export function useFocusTrap(
     };
 
     const onFocusIn = (event: FocusEvent) => {
+      if (isPaused()) return;
       if (event.target instanceof Node && !node.contains(event.target)) {
         (items()[0] ?? node).focus({ preventScroll: true });
       }
@@ -71,5 +88,5 @@ export function useFocusTrap(
       const target = previous && previous.isConnected ? previous : getFallback();
       target?.focus({ preventScroll: true });
     };
-  }, [ref]);
+  }, [ref, active]);
 }

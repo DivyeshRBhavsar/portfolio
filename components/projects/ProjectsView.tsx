@@ -1,30 +1,50 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { fill } from '@/components/character/speech';
+import { storyModeLabel, storyRegionLabel } from '@/components/character/luffyLines';
 import ProjectGallery from '@/components/ProjectGallery';
 import type { Repo } from '@/lib/github';
 import { storyPath, type Story, type StorySummary } from '@/lib/storyTypes';
+import { notifyLocation, useLocationHash } from './locationStore';
+import StoryOverlay from './StoryOverlay';
 import StoryPicker from './StoryPicker';
 import StoryPlayer from './StoryPlayer';
 import ViewToggle from './ViewToggle';
 import {
   applyViewAttr,
+  readSavedProjectsView,
   saveProjectsView,
   useClientReady,
-  useSavedProjectsView,
-  type ProjectsViewName,
 } from './viewStore';
+
+const PICKER_HASH = '#stories';
 
 function slugFrom(pathname: string): string | null {
   const match = pathname.match(/^\/projects\/([^/]+)\/?$/);
   return match ? decodeURIComponent(match[1]) : null;
 }
 
+function isOverlayUrl(): boolean {
+  const { pathname, hash } = window.location;
+  return slugFrom(pathname) !== null || (pathname === '/projects' && hash === PICKER_HASH);
+}
+
+/*
+ * History: story mode's URLs sit on top of the list's (/projects). `depth` counts the
+ * entries above it that we pushed, so closing goes back to the list entry (and the
+ * browser's Back button walks back the same way: story → picker → list). On a direct
+ * load of a story or the picker, the list is slipped in underneath, so Back closes story
+ * mode rather than leaving the site. Module-level: once per page load.
+ */
+let depth = 0;
+let seeded = false;
+
 /**
- * /projects and /projects/<slug>: the view toggle, then the repo list, story mode's
- * picker, or a story's slides. Opening and closing a story changes the URL in place
- * (no reload); the open story follows the URL, so the browser's Back button closes it.
+ * /projects and /projects/<slug>: the view toggle and the repo list, plus story mode's
+ * overlay (the picker at /projects#stories, a story at /projects/<slug>#n). Opening and
+ * closing change the URL in place (no reload), and what's open follows the URL.
  */
 export default function ProjectsView({
   repos,
@@ -39,14 +59,15 @@ export default function ProjectsView({
   storyByRepoId: Record<number, StorySummary>;
 }) {
   const pathname = usePathname();
+  const hash = useLocationHash();
+  const ready = useClientReady();
   const slug = slugFrom(pathname);
   const story = slug ? (stories.find((s) => s.slug === slug) ?? null) : null;
-  const saved = useSavedProjectsView();
-  const ready = useClientReady();
-  const view: ProjectsViewName = story ? 'story' : saved;
-  const topRef = useRef<HTMLDivElement>(null);
-  /** The visitor opened a story here (rather than arriving on its link). */
-  const [openedHere, setOpenedHere] = useState(false);
+  const pickerOpen = !story && pathname === '/projects' && hash === PICKER_HASH;
+  const open = story !== null || pickerOpen;
+
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const [askOpen, setAskOpen] = useState(false);
 
   const featured = stories.filter((s) => s.featured);
   const others = featured.filter((s) => s.slug !== story?.slug);
@@ -59,66 +80,111 @@ export default function ProjectsView({
       null)
     : null;
 
-  // <html data-projects-view> (CSS shows one view). Full page load: the layout's script
-  // set it before paint, so the hydration render (which can't know the saved view yet)
-  // leaves it alone. Client navigation: set here, before the first paint.
+  // Once per page load: put the list under a story-mode URL, or open the picker if the
+  // visitor left story mode on last time.
   useLayoutEffect(() => {
-    if (ready) applyViewAttr(view);
-  }, [ready, view]);
+    if (seeded) return;
+    seeded = true;
+    const { pathname: path, search, hash: h } = window.location;
+    if (isOverlayUrl()) {
+      window.history.replaceState(window.history.state, '', '/projects');
+      window.history.pushState(null, '', `${path}${search}${h}`);
+      depth = 1;
+      notifyLocation();
+    } else if (path === '/projects' && readSavedProjectsView() === 'story') {
+      window.history.pushState(null, '', `/projects${PICKER_HASH}`);
+      depth = 1;
+      notifyLocation();
+    }
+  }, []);
 
-  const toTop = () => {
-    const top = topRef.current;
-    if (top && top.getBoundingClientRect().top < 0) top.scrollIntoView({ block: 'start' });
+  // Back / Forward: keep count of where we are above the list.
+  useEffect(() => {
+    const onPop = () => {
+      depth = isOverlayUrl() ? Math.max(depth - 1, 1) : 0;
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  // <html data-projects-view>: CSS shows the overlay and locks scrolling. On a full page
+  // load the layout's script set it before paint; the hydration render leaves it alone.
+  useLayoutEffect(() => {
+    if (ready) applyViewAttr(open ? 'story' : 'list');
+  }, [ready, open]);
+
+  // Leaving story mode by any route (✕, Esc, Back) remembers the list for next time.
+  const wasOpen = useRef(open);
+  useEffect(() => {
+    if (wasOpen.current && !open) saveProjectsView('list');
+    wasOpen.current = open;
+  }, [open]);
+
+  const push = (url: string) => {
+    saveProjectsView('story');
+    window.history.pushState(null, '', url);
+    depth += 1;
+    notifyLocation();
   };
+  const openPicker = () => push(`/projects${PICKER_HASH}`);
+  const openStory = (next: string) => push(storyPath(next));
 
-  const openStory = (next: string) => {
-    setOpenedHere(true);
-    window.history.pushState(null, '', storyPath(next));
-    toTop();
-  };
-
-  const closeStory = (to: ProjectsViewName) => {
-    saveProjectsView(to);
-    window.history.pushState(null, '', '/projects');
-    toTop();
-    topRef.current?.focus({ preventScroll: true });
-  };
-
-  const changeView = (next: ProjectsViewName) => {
-    saveProjectsView(next);
-    if (story) window.history.pushState(null, '', '/projects');
+  const close = () => {
+    saveProjectsView('list');
+    setAskOpen(false);
+    if (depth > 0) {
+      const steps = depth;
+      depth = 0;
+      window.history.go(-steps);
+    } else {
+      window.history.pushState(null, '', '/projects');
+      notifyLocation();
+    }
   };
 
   return (
-    <div ref={topRef} tabIndex={-1} className="scroll-mt-24 outline-none">
-      <ViewToggle view={view} onChange={changeView} />
+    <div>
+      <ViewToggle
+        view={open ? 'story' : 'list'}
+        onChange={(view) => (view === 'story' ? openPicker() : close())}
+      />
 
-      {story ? (
-        <StoryPlayer
-          key={story.slug}
-          story={story}
-          nextStory={nextStory}
-          focusOnOpen={openedHere}
-          onOpenStory={openStory}
-          onClose={() => closeStory('story')}
-          onBackToList={() => closeStory('list')}
-        />
-      ) : (
-        <>
-          {/* Both are in the HTML; <html data-projects-view> shows one (no flash). */}
-          <div className="projects-list-view">
-            <ProjectGallery
-              repos={repos}
-              languages={languages}
-              storyByRepoId={storyByRepoId}
-              onWatchStory={openStory}
-            />
-          </div>
-          <div className="projects-story-view">
-            <StoryPicker stories={featured} active={view === 'story'} onOpen={openStory} />
-          </div>
-        </>
-      )}
+      <ProjectGallery
+        repos={repos}
+        languages={languages}
+        storyByRepoId={storyByRepoId}
+        onWatchStory={openStory}
+      />
+
+      <StoryOverlay
+        open={open}
+        ready={ready}
+        paused={askOpen}
+        label={story ? fill(storyRegionLabel, { title: story.title }) : storyModeLabel}
+        overlayRef={overlayRef}
+        onClose={close}
+      >
+        {story ? (
+          <StoryPlayer
+            key={story.slug}
+            story={story}
+            nextStory={nextStory}
+            overlayRef={overlayRef}
+            onOpenStory={openStory}
+            onAllStories={openPicker}
+            onClose={close}
+            onAskOpenChange={setAskOpen}
+          />
+        ) : (
+          <StoryPicker
+            stories={featured}
+            active={pickerOpen}
+            overlayRef={overlayRef}
+            onOpen={openStory}
+            onClose={close}
+          />
+        )}
+      </StoryOverlay>
     </div>
   );
 }

@@ -79,7 +79,7 @@ export default function ChatBubble({
   );
 }
 
-function TypingDots() {
+export function TypingDots() {
   return (
     <span className="inline-flex h-[1.625rem] items-center gap-1.5" title={typingIndicatorLabel}>
       {[0, 1, 2].map((i) => (

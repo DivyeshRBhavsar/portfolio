@@ -12,9 +12,10 @@ export const VIEW_ATTR = 'data-projects-view';
 
 /**
  * Runs inline in app/layout.tsx (with the stage guard) on full page loads only: on
- * /projects…, a story URL or a saved "story" → story, else list. Client-side navigation
+ * /projects…, a story URL, the picker (#stories) or a saved "story" → story (the
+ * story-mode overlay shows, scrolling locked), else list. Client-side navigation
  * doesn't re-run it, so ProjectsView sets the attribute itself (useLayoutEffect, before
  * paint). Pre-paint scripts live only in the root layout: React never runs a <script>
  * rendered on the client, and warns about it.
  */
-export const PROJECTS_VIEW_SCRIPT = `(function(){var p=location.pathname;if(p!=='/projects'&&p.indexOf('/projects/')!==0)return;var v='list';try{if(p.indexOf('/projects/')===0||localStorage.getItem('${VIEW_KEY}')==='story')v='story'}catch(e){}document.documentElement.setAttribute('${VIEW_ATTR}',v)})()`;
+export const PROJECTS_VIEW_SCRIPT = `(function(){var p=location.pathname;if(p!=='/projects'&&p.indexOf('/projects/')!==0)return;var v='list';try{if(p.indexOf('/projects/')===0||location.hash==='#stories'||localStorage.getItem('${VIEW_KEY}')==='story')v='story'}catch(e){}document.documentElement.setAttribute('${VIEW_ATTR}',v)})()`;

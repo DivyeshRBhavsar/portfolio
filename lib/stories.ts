@@ -5,6 +5,7 @@ import type {
   Bar,
   Metric,
   Slide,
+  SlideFocus,
   SlideType,
   Step,
   Story,
@@ -21,6 +22,12 @@ import type {
 
 const STORIES_DIR = path.join(process.cwd(), 'content', 'project_stories');
 const SLIDE_TYPES: SlideType[] = ['title', 'bullets', 'steps', 'metrics', 'bars', 'links'];
+
+/**
+ * Content limits: more than this and a slide gets crowded on a phone. Over a limit is a
+ * build warning (not an error), naming the file and slide.
+ */
+const LIMITS = { bullets: 4, metrics: 4, bars: 6, steps: 4, bulletLength: 140 };
 
 class StoryFileError extends Error {}
 
@@ -118,26 +125,56 @@ function parseStory(file: string, raw: unknown): Story {
       metrics: r.list(o, 'metrics', at, metric, { optional: true }),
       bullets: r.list(o, 'bullets', at, r.text, { optional: true }),
     };
-    switch (type) {
-      case 'title':
-        return { ...base, type, subtitle: r.optStr(o, 'subtitle', at) };
-      case 'bullets':
-        return { ...base, type, bullets: r.list(o, 'bullets', at, r.text)! };
-      case 'steps':
-        return { ...base, type, steps: r.list(o, 'steps', at, step)! };
-      case 'metrics':
-        return { ...base, type, metrics: r.list(o, 'metrics', at, metric)! };
-      case 'bars':
-        return {
-          ...base,
-          type,
-          unit: r.str(o, 'unit', at),
-          bars: r.list(o, 'bars', at, bar)!,
-          lowerIsBetter: r.optBool(o, 'lowerIsBetter', at),
-        };
-      default:
-        return { ...base, type: 'links' };
+    const parsed = ((): Slide => {
+      switch (type) {
+        case 'title':
+          return { ...base, type, subtitle: r.optStr(o, 'subtitle', at) };
+        case 'bullets':
+          return { ...base, type, bullets: r.list(o, 'bullets', at, r.text)! };
+        case 'steps':
+          return { ...base, type, steps: r.list(o, 'steps', at, step)! };
+        case 'metrics':
+          return { ...base, type, metrics: r.list(o, 'metrics', at, metric)! };
+        case 'bars':
+          return {
+            ...base,
+            type,
+            unit: r.str(o, 'unit', at),
+            bars: r.list(o, 'bars', at, bar)!,
+            lowerIsBetter: r.optBool(o, 'lowerIsBetter', at),
+          };
+        default:
+          return { ...base, type: 'links' };
+      }
+    })();
+    const focus = slideFocus(o.focus, parsed, `${at}focus`);
+    return focus ? { ...parsed, focus } : parsed;
+  };
+
+  /** { "metric": i } or { "bar": i }: a 0-based index into this slide's metrics or bars. */
+  const slideFocus = (value: unknown, parsed: Slide, where: string): SlideFocus | undefined => {
+    if (value === undefined) return undefined;
+    const o = r.obj(value, where);
+    const keys = Object.keys(o);
+    if (keys.length !== 1 || (keys[0] !== 'metric' && keys[0] !== 'bar')) {
+      r.fail(where, 'must be { "metric": index } or { "bar": index }');
     }
+    const key = keys[0] as 'metric' | 'bar';
+    const index = o[key];
+    const count =
+      key === 'metric'
+        ? (parsed.metrics?.length ?? 0)
+        : parsed.type === 'bars'
+          ? parsed.bars.length
+          : 0;
+    if (count === 0) r.fail(`${where}.${key}`, `points at a ${key}, but this slide has no ${key}s`);
+    if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index >= count) {
+      r.fail(
+        `${where}.${key}`,
+        `must be a whole number from 0 to ${count - 1} (0-based; this slide has ${count} ${key}s)`
+      );
+    }
+    return key === 'metric' ? { metric: index as number } : { bar: index as number };
   };
 
   const slug = r.str(story, 'slug', '');
@@ -183,9 +220,34 @@ function loadStories(): Story[] {
         `content/project_stories/${file}: not valid JSON (${(error as Error).message})`
       );
     }
-    return parseStory(file, raw);
+    const story = parseStory(file, raw);
+    contentWarnings(file, story).forEach((warning) => console.warn(warning));
+    return story;
   });
   return stories.sort((a, b) => a.order - b.order || a.slug.localeCompare(b.slug));
+}
+
+/** Slides over the content limits (warnings: the story still builds). */
+export function contentWarnings(file: string, story: Story): string[] {
+  const warnings: string[] = [];
+  story.slides.forEach((slide, i) => {
+    const where = `[stories] content/project_stories/${file} slide ${i + 1}`;
+    const over = (count: number, limit: number, what: string) => {
+      if (count > limit) warnings.push(`${where}: ${count} ${what} (max ${limit})`);
+    };
+    over(slide.bullets?.length ?? 0, LIMITS.bullets, 'bullets');
+    over(slide.metrics?.length ?? 0, LIMITS.metrics, 'metrics');
+    if (slide.type === 'bars') over(slide.bars.length, LIMITS.bars, 'bars');
+    if (slide.type === 'steps') over(slide.steps.length, LIMITS.steps, 'steps');
+    slide.bullets?.forEach((bullet, b) => {
+      if (bullet.length > LIMITS.bulletLength) {
+        warnings.push(
+          `${where}: bullet ${b + 1} is ${bullet.length} characters (max ${LIMITS.bulletLength})`
+        );
+      }
+    });
+  });
+  return warnings;
 }
 
 let cache: Story[] | null = null;

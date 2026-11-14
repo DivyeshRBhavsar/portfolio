@@ -1,0 +1,153 @@
+{
+  "slug": "face-recognition-login",
+  "title": "Your Face Is the Second Password",
+  "hook": "A desktop login system that only lets you in when both your password and your face match",
+  "repo": "https://github.com/DivyeshRBhavsar/Facial-Recognition-master",
+  "links": [],
+  "tags": [
+    "Computer Vision",
+    "OpenCV",
+    "LBPH",
+    "Haar Cascade",
+    "Tkinter",
+    "MySQL",
+    "Python"
+  ],
+  "featured": true,
+  "order": 7,
+  "slides": [
+    {
+      "type": "title",
+      "title": "Your Face Is the Second Password",
+      "subtitle": "Master of Engineering final project, Memorial University of Newfoundland",
+      "narration": "This was Divyesh's master's final project! He built a login system where a password alone isn't enough: your face has to match too."
+    },
+    {
+      "type": "bullets",
+      "title": "The problem",
+      "bullets": [
+        "Passwords alone can be guessed, shared or stolen",
+        "Two-factor login usually needs an extra device, like a phone for a code",
+        "A webcam is already built into most computers",
+        "The goal: combine something you know (a password) with something you are (your face)"
+      ],
+      "narration": "Passwords can be stolen. So the idea was simple: use the webcam as a second lock that only opens for the real person."
+    },
+    {
+      "type": "steps",
+      "title": "How it works",
+      "steps": [
+        {
+          "label": "Register",
+          "detail": "Sign up in the desktop app. The account is saved in MySQL"
+        },
+        {
+          "label": "Enroll",
+          "detail": "The webcam captures 100 face samples, saved as 200×200 grayscale images"
+        },
+        {
+          "label": "Verify",
+          "detail": "At login, the email and password are checked against the database first"
+        },
+        {
+          "label": "Recognise",
+          "detail": "A face model is trained on the user's samples and checks the live webcam feed"
+        }
+      ],
+      "narration": "New users register and let the webcam take a hundred pictures of their face. To log in, they need the right password, and then the camera has to recognise them."
+    },
+    {
+      "type": "steps",
+      "title": "Under the hood",
+      "steps": [
+        {
+          "label": "Find the face",
+          "detail": "OpenCV's Haar Cascade detector locates frontal faces in each webcam frame"
+        },
+        {
+          "label": "Describe it",
+          "detail": "LBPH encodes local texture patterns of the face into histograms"
+        },
+        {
+          "label": "Compare it",
+          "detail": "LBPH returns a distance score, where lower means more similar to the enrolled user"
+        }
+      ],
+      "narration": "First the system finds the face in the picture. Then it turns the face's texture into numbers and measures how close they are to the person who signed up."
+    },
+    {
+      "type": "metrics",
+      "title": "The decision rules",
+      "metrics": [
+        {
+          "label": "Face samples per user",
+          "value": "100"
+        },
+        {
+          "label": "Image size",
+          "value": "200×200"
+        },
+        {
+          "label": "Match: access granted",
+          "value": "distance < 65"
+        },
+        {
+          "label": "Unknown: photo saved",
+          "value": "distance > 85"
+        }
+      ],
+      "bullets": [
+        "Between 65 and 85 the system isn't sure, so it keeps scanning instead of guessing",
+        "LBPH is lightweight: it trains in seconds on a normal laptop CPU and copes well with lighting changes",
+        "Faces that clearly don't match are saved to an UnknownFaces folder for review"
+      ],
+      "narration": "If the face is a close match, you're in. If it's clearly a stranger, the system takes a snapshot of the intruder. In between, it keeps looking until it's sure.",
+      "focus": {
+        "metric": 2
+      }
+    },
+    {
+      "type": "bullets",
+      "title": "Testing it in the real world",
+      "bullets": [
+        "One registered user: their name and match score appear over their face, and the Home window opens",
+        "Two people in front of the camera: only the registered user is recognised, and the other person is labelled Unknown",
+        "Matching takes a moment: a user may briefly show as Unknown, so the system keeps scanning instead of rejecting"
+      ],
+      "narration": "He tested it with real people. With two faces in view, it picked out the registered user and labelled the other person as unknown."
+    },
+    {
+      "type": "bullets",
+      "title": "More than a face check",
+      "bullets": [
+        "Registration form with input validation and duplicate-email checks",
+        "Forgot-password flow using security questions",
+        "Desktop GUI built with Tkinter and Pillow",
+        "Each user's face samples are stored in their own folder"
+      ],
+      "narration": "Around the face recognition, he built a complete account system, with sign-up checks and a way to reset a forgotten password."
+    },
+    {
+      "type": "bullets",
+      "title": "Limitations",
+      "bullets": [
+        "No liveness check: a printed photo or a phone screen could fool the face model",
+        "Passwords are stored in plain text; a real system would hash them",
+        "The model is retrained at every login instead of once at enrollment",
+        "Accuracy drops with poor lighting, side profiles, masks or sunglasses"
+      ],
+      "narration": "He's upfront about the limits. It's an academic prototype: a photo could trick it, and the passwords would need proper protection before real use."
+    },
+    {
+      "type": "links",
+      "title": "What's next, and explore it yourself",
+      "bullets": [
+        "Next: switch to deep-learning face embeddings such as FaceNet or ArcFace for higher accuracy",
+        "Add liveness detection, like blink or head-movement checks, to stop photo attacks",
+        "Hash passwords and move database settings out of the code",
+        "The full code is on GitHub"
+      ],
+      "narration": "Next steps are a smarter face model and a check that you're a real, live person. The code is on GitHub if you'd like to explore it!"
+    }
+  ]
+}

@@ -10,7 +10,8 @@ import type { Category } from '@/lib/categories';
 
 /**
  * [All n] then each category with its count, in display order (empty ones hidden).
- * Real buttons with aria-pressed; `selected` null = All.
+ * Real buttons with aria-pressed; `selected` null = All. `oneRowOnPhones`: under 640px
+ * the chips stay in one row that scrolls sideways (faded edges), instead of wrapping.
  */
 export default function CategoryChips({
   categories,
@@ -19,6 +20,7 @@ export default function CategoryChips({
   selected,
   onSelect,
   kind,
+  oneRowOnPhones = false,
 }: {
   categories: Category[];
   /** Projects (or stories) per category slug. */
@@ -27,6 +29,7 @@ export default function CategoryChips({
   selected: string | null;
   onSelect: (slug: string | null) => void;
   kind: 'projects' | 'stories';
+  oneRowOnPhones?: boolean;
 }) {
   const chips = [
     { slug: null, name: categoryAllLabel, count: total },
@@ -36,7 +39,11 @@ export default function CategoryChips({
   ];
 
   return (
-    <div role="group" aria-label={categoryChipsLabel[kind]} className="flex flex-wrap gap-2">
+    <div
+      role="group"
+      aria-label={categoryChipsLabel[kind]}
+      className={`flex flex-wrap gap-2 ${oneRowOnPhones ? 'chip-row max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:px-2.5 max-sm:py-0.5' : ''}`}
+    >
       {chips.map((chip) => {
         const pressed = chip.slug === selected;
         return (
@@ -45,7 +52,7 @@ export default function CategoryChips({
             type="button"
             aria-pressed={pressed}
             onClick={() => onSelect(chip.slug)}
-            className={`pill inline-flex min-h-11 items-center gap-2 ${
+            className={`pill inline-flex min-h-11 shrink-0 items-center gap-2 whitespace-nowrap ${
               pressed
                 ? 'border-ink bg-sun text-on-sun'
                 : 'border-ink-muted bg-surface text-ink hover:border-ink hover:bg-sun/40'

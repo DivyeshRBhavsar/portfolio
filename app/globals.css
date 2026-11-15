@@ -249,6 +249,18 @@ html[data-projects-view='story'] {
 html[data-projects-view='story'] .story-overlay {
   display: flex;
 }
+/* Story picker on phones: the category chips scroll sideways in one row, fading out at
+   the edges so it's clear there's more (components/projects/CategoryChips.tsx). */
+@media (max-width: 639.98px) {
+  .chip-row {
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 10px, #000 calc(100% - 10px), transparent 100%);
+  }
+  .chip-row::-webkit-scrollbar {
+    display: none;
+  }
+}
 @media (min-width: 640px) and (min-height: 500px) {
   .story-overlay {
     padding: max(1.25rem, env(safe-area-inset-top)) max(1.25rem, env(safe-area-inset-right))

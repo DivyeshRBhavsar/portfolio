@@ -554,3 +554,62 @@ export const homeLinkedInLabel = "LinkedIn";
 export const homeEmailLabel = "Email me";
 export const homeContactPageLabel = "Contact page";
 export const footerEmailLabel = "Email";
+
+// ── 12. Work with me ──
+// The /work-with-me page for clients. Its content (services, process, FAQ, planner
+// questions) is in content/services.json; the labels and Luffy's own lines are here.
+
+// Header and footer
+export const navWorkWithMe = "Work with me";
+export const navMenuOpen = "Open menu";
+export const navMenuClose = "Close menu";
+
+// Page title (browser tab)
+export const workMetaTitle = "Work with me — Divyesh Bhavsar";
+
+// Hero: the capacity badge's expandable detail
+export const workCapacityMore = "Why?";
+export const workCapacityLess = "Hide";
+
+// "What would you like to fix?"
+export const workShowEverything = "Show me everything";
+
+// Service cards
+export const workServicesHeading = "What I can build for you";
+export const workNeedIfHeading = "You might need this if…";
+export const workYouGetHeading = "What you get";
+export const workStepsHeading = "How it goes";
+// Shown before the named story links on each card.
+export const workProofLabel = "See similar work:";
+export const workTechToggle = "What I'd use";
+export const workPlanButton = "Plan this project";
+export const workTalkButton = "Talk about this";
+
+// How a project works (screen readers hear "Checkpoint: ..." for the ✓ line)
+export const workCheckpointLabel = "Checkpoint";
+
+// When will it be done?
+export const workFactorsHeading = "What affects the timeline";
+
+// FAQ
+export const workFaqHeading = "Questions people ask";
+
+// Plan my project. {n} of {total}; {title} = the chosen service's name.
+export const workPlannerProgress = "{n} of {total}";
+export const workPlannerBack = "Back";
+export const workPlannerStartOver = "Start over";
+export const workPlannerSend = "Send this plan to Divyesh";
+export const workPlannerChosen = "You picked: {title}";
+export const workPlannerResultLine = "Here's how your project would go. Not bad, right?";
+export const workPlannerResultTitle = "Your project plan";
+export const workPlannerStepsHeading = "The steps";
+export const workPlannerNeedHeading = "What I'd need from you";
+export const workPlannerNotesHeading = "Good to know";
+export const workPlannerAgreed = "The timeline and price are agreed in the written proposal, after a free call and a look at your data. You approve both before any work starts.";
+// First line of the plan summary sent to the contact page.
+export const workPlannerSummaryService = "Service";
+
+// Closing call to action
+export const workClosingTitle = "Have a project in mind?";
+export const workClosingLuffy = "Tell Divyesh what you'd like to fix. The first call is free, and there's no obligation!";
+export const workClosingButton = "Talk about your project";

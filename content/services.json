@@ -1,0 +1,274 @@
+{
+  "_note": "Content for the Work with me page. Edit freely. Anything containing TODO is hidden on the site.",
+
+  "hero": {
+    "title": "Work with me",
+    "subtitle": "I help businesses across Canada and the US turn messy data, manual work and big ideas into tools that actually get used.",
+    "luffy": "Got a problem that eats up your time? Tell me what you'd like to fix, and I'll show you how Divyesh would approach it!"
+  },
+
+  "capacity": {
+    "available": true,
+    "label": "Currently taking 1 new project",
+    "detail": "I keep my project load small so every client gets my full attention. If I'm fully booked, you can still get in touch and I'll tell you when I can start.",
+    "fullLabel": "Fully booked right now: get in touch to join the waitlist"
+  },
+
+  "where": {
+    "text": "Remote for clients anywhere in Canada and the US. Happy to meet in person around Kitchener-Waterloo, Ontario."
+  },
+
+  "problems": {
+    "question": "What would you like to fix?",
+    "items": [
+      { "label": "We waste hours on manual data entry", "service": "automation" },
+      { "label": "I can't see how my business is doing", "service": "dashboards" },
+      { "label": "I want to know which customers will buy or leave", "service": "predictions" },
+      { "label": "Customers keep asking the same questions", "service": "ai-assistants" },
+      { "label": "I need a better website", "service": "websites" },
+      { "label": "I need a small tool for one specific job", "service": "custom-tools" }
+    ]
+  },
+
+  "services": [
+    {
+      "id": "ai-assistants",
+      "emoji": "🤖",
+      "name": "AI assistants on your documents",
+      "promise": "A chatbot that answers questions using your own manuals, policies or product information, and says so when it doesn't know.",
+      "needIf": [
+        "Your team or customers ask the same questions again and again",
+        "Important answers are buried in long documents",
+        "You want AI help without sending everything to a generic chatbot"
+      ],
+      "youGet": [
+        "An assistant that answers from your documents and shows where each answer came from",
+        "Guardrails so it stays on topic and admits when it isn't sure",
+        "A simple way to update the documents it uses",
+        "Documentation and a hand-over session"
+      ],
+      "steps": [
+        "Agree on what the assistant should and shouldn't answer",
+        "Collect and review the documents it will learn from",
+        "Build a first version and test it with real questions",
+        "Review the answers together and tune it",
+        "Add it where your users are (website, internal tool)",
+        "Hand over with documentation and training"
+      ],
+      "proof": ["candidate-ranking"],
+      "tech": ["Python", "RAG (FAISS, ChromaDB)", "Hugging Face", "Open-source LLMs (Qwen, Llama)", "Prompt engineering"]
+    },
+    {
+      "id": "dashboards",
+      "emoji": "📊",
+      "name": "Dashboards and automated reports",
+      "promise": "One live dashboard instead of rebuilding the same spreadsheet every week.",
+      "needIf": [
+        "Someone spends hours every week preparing the same report",
+        "Numbers from different systems never quite match",
+        "You make decisions on gut feeling because the data is hard to see"
+      ],
+      "youGet": [
+        "A dashboard connected to your data that refreshes automatically",
+        "Clear definitions for every number on it",
+        "Checks that flag when the data looks wrong",
+        "A training session for your team"
+      ],
+      "steps": [
+        "Agree on the key numbers you want to track",
+        "Get access to your data and check its quality",
+        "Clean and connect the data",
+        "Build a first version and review it together",
+        "Refine it based on your feedback",
+        "Set up automatic refresh, then hand over with training"
+      ],
+      "proof": ["term-deposit-calling-model"],
+      "experience": "Built and maintained 15+ Power BI dashboards and automated recurring reports as a data analyst at Coast Capital Savings, cutting manual work by 45%",
+      "tech": ["Power BI", "SQL", "Snowflake", "Python", "Excel"]
+    },
+    {
+      "id": "predictions",
+      "emoji": "🔮",
+      "name": "Predictions from your data",
+      "promise": "Know which customers are likely to buy, leave or need attention, so you can act first.",
+      "needIf": [
+        "You'd like to focus effort on the customers most likely to say yes",
+        "You only find out customers are unhappy after they've left",
+        "You have years of data but don't use it to plan ahead"
+      ],
+      "youGet": [
+        "A model trained on your data, with honest accuracy figures",
+        "A plain-English explanation of what drives the predictions",
+        "A simple way to use it: a list, a dashboard or a small tool",
+        "Notes on its limits and when to retrain it"
+      ],
+      "steps": [
+        "Agree on the question and what a useful answer looks like",
+        "Explore your data and check what it can and can't tell us",
+        "Build and compare several models fairly",
+        "Review the results and what drives them together",
+        "Turn the best model into something your team can use",
+        "Hand over with documentation and a plan for keeping it accurate"
+      ],
+      "proof": ["term-deposit-calling-model", "customer-happiness", "h1n1-seasonal-prediction"],
+      "tech": ["Python", "scikit-learn", "XGBoost", "CatBoost", "Statistics"]
+    },
+    {
+      "id": "automation",
+      "emoji": "📄",
+      "name": "Automation and data extraction",
+      "promise": "Pull data out of PDFs, portals and spreadsheets automatically, instead of copying it by hand.",
+      "needIf": [
+        "Someone copies information from PDFs or websites into spreadsheets",
+        "The same downloads and clicks happen every week",
+        "Mistakes creep in because the work is repetitive"
+      ],
+      "youGet": [
+        "A tool that collects and organises the data for you, ideally in one click",
+        "Clean files (e.g. CSV or Excel) with no duplicates",
+        "Clear messages when something needs a person (like a login)",
+        "Tests, documentation and a short training"
+      ],
+      "steps": [
+        "Walk me through the manual process you do today",
+        "Collect sample documents or screens",
+        "Build the automation for one sample",
+        "Test it on all your real examples and handle the edge cases",
+        "Make it simple to run for your team",
+        "Hand over with instructions and a short training"
+      ],
+      "proof": ["secure-portal-pdf-extraction"],
+      "tech": ["Python", "Playwright", "pdfplumber", "Streamlit", "pytest"]
+    },
+    {
+      "id": "websites",
+      "emoji": "🌐",
+      "name": "Websites",
+      "promise": "Fast, modern, mobile-friendly websites that are easy to keep up to date.",
+      "needIf": [
+        "Your current site looks dated or breaks on phones",
+        "You want a site that explains what you do clearly",
+        "You'd like something more interactive than a template"
+      ],
+      "youGet": [
+        "A responsive website designed around your content",
+        "Good accessibility and loading speed",
+        "Hosting set up in your own account",
+        "Guidance on updating it yourself"
+      ],
+      "steps": [
+        "Agree on the goals, pages and content",
+        "Sketch the layout and look, and review it together",
+        "Build the site page by page, sharing previews",
+        "Test on phones, tablets and different browsers",
+        "Launch on your domain",
+        "Hand over with a short guide for updates"
+      ],
+      "proof": ["portfolio"],
+      "tech": ["Next.js", "React", "TypeScript", "Tailwind CSS", "Vercel"]
+    },
+    {
+      "id": "custom-tools",
+      "emoji": "🧰",
+      "name": "Small custom tools",
+      "promise": "A simple app built for one specific job your off-the-shelf software doesn't handle.",
+      "needIf": [
+        "A spreadsheet has grown into something it was never meant to be",
+        "You need a small internal tool with a proper interface",
+        "Existing software almost fits, but not quite"
+      ],
+      "youGet": [
+        "A working tool with a simple interface",
+        "A database where needed",
+        "Tests so it keeps working as it changes",
+        "Documentation and a hand-over session"
+      ],
+      "steps": [
+        "Agree on exactly what the tool must do",
+        "Sketch the screens and how it will be used",
+        "Build a first working version",
+        "Test it with your real tasks and refine it",
+        "Set it up for your team",
+        "Hand over with documentation and training"
+      ],
+      "proof": ["face-recognition-login", "secure-portal-pdf-extraction"],
+      "tech": ["Python", "Streamlit", "Tkinter", "MySQL", "pytest & CI"]
+    }
+  ],
+
+  "process": {
+    "title": "How a project works",
+    "luffy": "No surprises here. Every step ends with something you see and approve before the next one starts.",
+    "steps": [
+      { "name": "Free discovery call", "what": "We talk about the problem, your data or content, and what success looks like.", "checkpoint": "We agree whether it's worth doing" },
+      { "name": "Written proposal", "what": "Scope, steps, price, what's included and what isn't, and the timeline.", "checkpoint": "You approve the proposal before any work starts" },
+      { "name": "Data and design check", "what": "I look at your real data or content and confirm the plan works.", "checkpoint": "\"Go\", or we adjust the plan together" },
+      { "name": "Build, step by step", "what": "The work happens in small pieces, and I show you each one.", "checkpoint": "You review each piece" },
+      { "name": "Handover", "what": "The final version, documentation and training for your team.", "checkpoint": "You confirm everything works" },
+      { "name": "Support", "what": "I fix anything that doesn't work as we agreed.", "checkpoint": null }
+    ]
+  },
+
+  "timeline": {
+    "title": "When will it be done?",
+    "text": "Every project is different, so I don't guess a timeline before I understand yours. After the free call and a look at your data, the written proposal includes a timeline for each step, which you approve before any work begins. If something changes along the way, I tell you straight away and we agree on a new plan together.",
+    "factors": [
+      "How ready and clean your data or content is",
+      "How many systems or data sources are involved",
+      "How quickly feedback comes back at each checkpoint",
+      "Changes to the scope after the work starts"
+    ]
+  },
+
+  "pricing": {
+    "title": "What will it cost?",
+    "text": "Every project is priced individually after our first conversation, based on what you actually need. You'll get a clear written price in the proposal before any work starts, and any change is agreed in writing first, so there are no surprise bills."
+  },
+
+  "promises": {
+    "title": "My promises to you",
+    "items": [
+      "A written scope and price before any work starts",
+      "Something to see and approve at every step, and regular progress updates",
+      "You own everything: the code, data, accounts and documentation",
+      "Changes are agreed in writing first, so there are no surprise bills",
+      "Your data stays private, with an NDA on request, and I delete my copies after handover",
+      "If I'm not the right fit for your project, I'll say so and point you elsewhere"
+    ]
+  },
+
+  "faq": [
+    { "q": "Do I need to know anything technical?", "a": "Not at all. I'll explain everything in plain language, and you only need to know your business and your goals." },
+    { "q": "What if my data is messy?", "a": "That's normal. The data and design check exists for exactly this: I look at your real data early and tell you honestly what's possible before the main work starts." },
+    { "q": "Who owns the work?", "a": "You do. The code, data, accounts and documentation are all yours at handover." },
+    { "q": "Do you work with clients outside Ontario?", "a": "Yes. I work remotely with clients anywhere in Canada and the US, and I'm happy to meet in person around Kitchener-Waterloo." },
+    { "q": "How is the price decided?", "a": "After our first conversation. Every project is different, so you'll get a written price for your specific project in the proposal, before any work begins." },
+    { "q": "What happens after handover?", "a": "There's a support period to fix anything that doesn't work as agreed. After that, I'm happy to help with changes or improvements as a new piece of work." }
+  ],
+
+  "planner": {
+    "title": "Plan my project",
+    "luffy": "Answer a few quick questions and I'll sketch the steps your project would go through.",
+    "questions": [
+      { "id": "service", "label": "What do you need?", "type": "service" },
+      { "id": "sources", "label": "How many places does your data or content come from?", "type": "chips", "options": ["One", "2–3", "More than 3", "Not sure"] },
+      { "id": "ready", "label": "Do you already have the data or content?", "type": "chips", "options": ["Yes, ready to share", "Partly", "Not yet"] },
+      { "id": "users", "label": "Who will use it?", "type": "chips", "options": ["Just me", "My team", "My customers"] }
+    ],
+    "notes": {
+      "sources:More than 3": "With several data sources, connecting and checking the data will need extra care.",
+      "sources:Not sure": "We'll map out exactly where your data lives during the discovery call.",
+      "ready:Partly": "We'll start with what you have and plan how to fill the gaps.",
+      "ready:Not yet": "The first step will be gathering the data or content together.",
+      "users:My customers": "Since customers will use it, we'll include extra testing and a polished finish."
+    },
+    "needFromYou": {
+      "ai-assistants": ["The documents it should learn from", "A list of typical questions", "Someone to review answers"],
+      "dashboards": ["Access to your data (or an export)", "The numbers you care about most", "Someone to give feedback on drafts"],
+      "predictions": ["Historical data about the outcome you want to predict", "The decision you'll make with the prediction", "Someone who knows the data"],
+      "automation": ["A walkthrough of the current process", "Sample documents or screens", "Access to the systems involved"],
+      "websites": ["Your content and images (or a plan for them)", "Examples of sites you like", "Access to your domain"],
+      "custom-tools": ["A description of the task today", "Example inputs and outputs", "Someone to test early versions"]
+    }
+  }
+}

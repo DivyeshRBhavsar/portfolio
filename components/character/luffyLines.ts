@@ -233,7 +233,7 @@ export const miniLuffyLabel = "Ask Luffy a question";
 export const askPanelTitle = "Ask Luffy";
 export const askPanelCloseLabel = "Close";
 export const starterQuestionsLabel = "Questions you can ask";
-export const askInputLabel = "Ask anything (coming soon)";
+export const askInputLabel = "Ask anything";
 export const askSendLabel = "Send";
 export const visitorSaidLabel = "You:";
 export const luffySaidLabel = "Luffy:";
@@ -754,3 +754,40 @@ export const blogHeroCounts = {
 // Contact (Luffy greets with contactGreetings, in section 13).
 export const contactHeroTitle = "Let's talk";
 export const contactHeroSubtitle = "Tell me what you have in mind, and I'll get back to you.";
+
+// ── 15. Ask Luffy chat ──
+// The chat panel (Mini Luffy, the home "Ask Luffy" chip, the story-end button). Luffy's
+// answers come from /api/chat; these are the panel's own labels and lines.
+// {n} / {total} placeholders are filled in automatically.
+
+export const chatCharCount = "{n} / {total}";
+export const chatCounter = "{n} of {total} questions";
+// When the visitor unlocks more questions. {n} = how many more.
+export const chatUnlockLines = [
+  "You've unlocked {n} more questions! 🎉",
+  "Great questions! That unlocks {n} more 🎉",
+];
+export const chatClear = "Clear chat";
+export const chatTrustLine = "Luffy is an AI and can make mistakes. Answers come from Divyesh's site content.";
+export const chatSourcesLabel = "Sources";
+export const chatSourcePrefix = "📖";
+export const chatThinkingLabel = "Luffy is thinking";
+export const chatContinueButton = "Continue with Divyesh →";
+export const chatContactButton = "Contact Divyesh";
+export const chatTryAgain = "Try again";
+// Under the conversation once it has ended (the input is disabled for this visit).
+export const chatEndedNotes = {
+  limit: "That's all the questions for this visit. Divyesh can take it from here!",
+  flow_complete: "We've covered a lot! The best next step is talking to Divyesh.",
+  off_track: "Luffy is napping for the rest of this visit.",
+  daily_cap: "Luffy is resting until tomorrow.",
+  unavailable: "Luffy can't answer right now.",
+};
+// Problems sending a question.
+export const chatErrors = {
+  busy: "One question at a time, please! I'm still answering the last one.",
+  rejected: "Hmm, I couldn't take that one. Could you rephrase it in under 300 characters?",
+  network: "I couldn't reach my notes just now. Check your connection and try again?",
+};
+// From a story's "Ask Luffy" button: put in the input (not sent). {title} = the story.
+export const chatStoryPrefill = "Tell me more about {title}";

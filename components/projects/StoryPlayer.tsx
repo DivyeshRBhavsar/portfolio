@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, LayoutGrid, Pause, Play } from 'lucide-react
 import AskLuffyPanel from '@/components/character/AskLuffyPanel';
 import LuffyHead from '@/components/character/LuffyHead';
 import {
+  chatStoryPrefill,
   contactAskAboutProject,
   slideCounterLabel,
   storyComingSoonLines,
@@ -361,6 +362,7 @@ export default function StoryPlayer({
           reducedMotion={reducedMotion}
           onClose={() => setAsk(false)}
           returnFocus={() => controlsRef.current?.querySelector<HTMLElement>('button') ?? null}
+          prefill={fill(chatStoryPrefill, { title: story.title })}
         />
       )}
     </section>

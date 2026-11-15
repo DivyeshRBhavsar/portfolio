@@ -4,6 +4,7 @@ import { classifyByRules } from './classify';
 import { category, getGuardrails, pickOne } from './guardrails';
 import { questionScript, scriptShare, systemPrompt, userPrompt, type Turn } from './prompt';
 import { hybridSearch, selectContext, type Retrieved, type SearchResult } from './search';
+import { cacheStarter, findStarter, getCachedStarter } from './starters';
 import {
   INTENTS,
   contactFor,
@@ -73,9 +74,15 @@ export function answerStream(input: ChatInput): ReadableStream<Uint8Array> {
 
       let state: SessionState | null = null;
 
+      // Starter questions never count, ignore the visitor's history (their answer is
+      // shared through the cache), and are served from the cache when possible.
+      const starter = findStarter(message);
+      const promptHistory = starter ? [] : history;
+
       /** Count a question, save it, and close with the stop reply if this one stopped the session. */
       const count = async (categoryId: string, kind: Kind, intent: Intent) => {
         const prev = state!;
+        if (starter) return { prev, next: prev };
         const next = countQuestion(prev, { category: categoryId, kind, intent, text: message });
         if (next !== prev) await saveSession(sessionId, next);
         state = next;
@@ -113,6 +120,19 @@ export function answerStream(input: ChatInput): ReadableStream<Uint8Array> {
           return;
         }
 
+        // A starter answered in the last 24 hours: from the cache, free (no cap, no count).
+        if (starter) {
+          const cached = await getCachedStarter(starter.question).catch(() => null);
+          if (cached) {
+            const intent = (INTENTS as readonly string[]).includes(cached.intent) ? (cached.intent as Intent) : 'casual';
+            meta(cached.category, intent, state);
+            for (const piece of cached.text.match(/\S+\s*/g) ?? []) token(piece);
+            if (cached.sources.length) send('sources', cached.sources);
+            done(false);
+            return;
+          }
+        }
+
         // Daily caps (every accepted message counts).
         if (await overDailyCap(ipHash)) {
           meta('daily_cap', 'casual', state);
@@ -143,7 +163,7 @@ export function answerStream(input: ChatInput): ReadableStream<Uint8Array> {
         const openAnswer = async (strictLanguage: boolean) => {
           const stream = streamChat([
             { role: 'system', content: systemPrompt() },
-            { role: 'user', content: userPrompt(message, context, history, strictLanguage) },
+            { role: 'user', content: userPrompt(message, context, promptHistory, strictLanguage) },
           ]);
           let buffer = '';
           let parsed = parseMeta('');
@@ -216,6 +236,11 @@ export function answerStream(input: ChatInput): ReadableStream<Uint8Array> {
         if (validCategory === 'on_topic' && grounded && answer.trim()) {
           const sources = pickSources(context, answer);
           if (sources.length) send('sources', sources);
+          if (starter) {
+            await cacheStarter(starter.question, { text: answer.trim(), sources, category: validCategory, intent }).catch(() => {
+              console.warn('[luffy] starter cache write failed');
+            });
+          }
         }
         finish(prev, next);
       } catch (error) {

@@ -89,6 +89,17 @@ npm run luffy:ask -- "Which projects used CatBoost?"     # ask the local /api/ch
 npm run luffy:ask -- --new --base http://localhost:3123 "Hi!" "…"   # fresh session, other port
 ```
 
+To test limits from scratch in development, `luffy:reset` deletes Luffy's Redis keys (found with
+SCAN, deleted with DEL, after asking you to confirm). It refuses to run when `NODE_ENV` is
+`production`, and never touches the FAQ log keys.
+
+```bash
+npm run luffy:reset -- --caps        # daily caps (luffy:cap:*)
+npm run luffy:reset -- --sessions    # visitor sessions and their question counts (luffy:s:*)
+npm run luffy:reset -- --starters    # cached starter answers (luffy:starter:*)
+npm run luffy:reset -- --all         # all three
+```
+
 The answering API is `app/api/chat/route.ts` (logic in `lib/luffy/`). Every limit, cap and threshold
 is in `lib/luffy/config.ts`; it also needs `LUFFY_HASH_SALT` (a long random secret for hashing IPs).
 

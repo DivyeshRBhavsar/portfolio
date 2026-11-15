@@ -624,6 +624,21 @@ html[data-stage='welcome'] .stage-backdrop {
   }
 }
 
+/* Ask Luffy: a gentle back-and-forth head tilt while he waits for the first word. */
+.luffy-thinking {
+  animation: luffy-thinking 1.6s ease-in-out infinite;
+  transform-origin: 50% 90%;
+}
+@keyframes luffy-thinking {
+  0%,
+  100% {
+    transform: rotate(-7deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
 html {
   scroll-behavior: smooth;
   /* Reserve the scrollbar's space so locking scroll during the intro doesn't shift the layout. */
@@ -647,6 +662,7 @@ html {
   .stage-star,
   .stage-bounce,
   .typing-dot,
+  .luffy-thinking,
   .story-focus {
     animation: none !important;
   }

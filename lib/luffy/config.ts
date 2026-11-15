@@ -88,6 +88,8 @@ export const LIMITS = {
   lockSeconds: 30,
   /** The end-of-conversation summary of relevant questions. */
   summaryMaxChars: 600,
+  /** Starter questions' shared answer cache. */
+  starterCacheSeconds: 24 * 60 * 60,
 };
 
 /** Daily caps (reset at midnight Toronto time). Every accepted message counts. */

@@ -9,7 +9,8 @@
     "lint": "eslint",
     "knowledge:build": "tsx scripts/knowledge-build.ts",
     "knowledge:search": "tsx scripts/knowledge-search.ts",
-    "luffy:ask": "tsx scripts/luffy-ask.ts"
+    "luffy:ask": "tsx scripts/luffy-ask.ts",
+    "luffy:reset": "tsx scripts/luffy-reset.ts"
   },
   "dependencies": {
     "gray-matter": "4.0.3",

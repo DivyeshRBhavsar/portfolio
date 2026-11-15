@@ -55,6 +55,95 @@ export const SITE_PATHS = {
   services: () => '/work-with-me',
 };
 
+// ── The answering API (app/api/chat) ──
+
+/** What a request may contain. */
+export const REQUEST = {
+  maxMessageChars: 300,
+  maxBodyBytes: 8 * 1024,
+  /** Turns of history from the browser used as context (never for limits). */
+  historyTurns: 3,
+  historyChars: 300,
+};
+
+/**
+ * Question limits per session. Neutral questions (greetings, about Luffy) don't count.
+ * Relevant = on_topic or on_topic_redirect; off-track = off_topic, gibberish or abuse.
+ *   after question 5:  ≥ 4 of the first 5 relevant → limit 10, else stop ("limit")
+ *   after question 10: ≥ 4 of questions 6–10 relevant AND ≥ 2 relevant questions with
+ *                      intent hiring/project → limit 15, else stop ("flow_complete")
+ *   after question 15: stop ("flow_complete")
+ *   any time: 3 off-track in a row or 2 abuse in total → stop ("off_track")
+ */
+export const LIMITS = {
+  first: 5,
+  second: 10,
+  third: 15,
+  relevantNeeded: 4,
+  hiringOrProjectNeeded: 2,
+  offTrackStreak: 3,
+  abuseTotal: 2,
+  sessionTtlSeconds: 24 * 60 * 60,
+  /** One question at a time per session. */
+  lockSeconds: 30,
+  /** The end-of-conversation summary of relevant questions. */
+  summaryMaxChars: 600,
+};
+
+/** Daily caps (reset at midnight Toronto time). Every accepted message counts. */
+export const CAPS = { perIpPerDay: 30, sitePerDay: 300, timeZone: 'America/Toronto' };
+
+/** Hybrid retrieval (vector + keyword) and the relevance threshold. */
+export const RETRIEVAL = {
+  /** Below this top cosine, the question is off-topic (no model call). */
+  threshold: 0.3,
+  vectorWeight: 0.75,
+  keywordWeight: 0.25,
+  /** keyword score → 0..1 as score / (score + saturation) */
+  keywordSaturation: 8,
+  vectorTopK: 10,
+  candidates: 8,
+  perSource: 2,
+  contextChunks: 5,
+  maxSources: 3,
+  /** Sources the answer doesn't name are shown only if this close to the best score. */
+  sourceScoreMargin: 0.05,
+};
+
+/** The chat model call. */
+export const MODEL = { temperature: 0.3, maxTokens: 350, firstTokenMs: 8000, totalMs: 25000 };
+
+/**
+ * Language safety net, for questions in a non-Latin script only: the first answer is held
+ * back; if less than `minScriptShare` of its letters are in the question's script, it's
+ * regenerated once with a stricter instruction (only if the first took under
+ * `retryIfUnderMs`, to stay inside the route's 30 s). The retry isn't counted.
+ */
+export const LANGUAGE = { minScriptShare: 0.5, retryIfUnderMs: 12000 };
+
+/** Luffy's replies that aren't in content/luffy-guardrails.json. */
+export const API_REPLIES = {
+  dailyCap: "I've answered a lot of questions today and need a little rest 😴 Come back tomorrow, or send Divyesh a message on the contact page!",
+};
+
+export const SESSION_COOKIE = 'luffy_sid';
+
+let warnedSalt = false;
+/**
+ * The secret mixed into IP hashes (raw IPs are never stored). Required in production;
+ * in development a fixed fallback is used, with a warning.
+ */
+export function hashSalt(): string {
+  const salt = process.env.LUFFY_HASH_SALT?.trim();
+  if (salt) return salt;
+  if (process.env.NODE_ENV === 'production') return requireEnv('LUFFY_HASH_SALT');
+  if (!warnedSalt) {
+    console.warn('[luffy] LUFFY_HASH_SALT is not set; using a development fallback.');
+    warnedSalt = true;
+  }
+  return 'luffy-dev-salt';
+}
+
 class LuffyConfigError extends Error {}
 
 /** A required environment variable, or a clear error naming it (never its value). */
@@ -85,7 +174,7 @@ export function upstashRedis(): { url: string; token: string } {
 /** Replace any configured secret in a message with [hidden] (for error output). */
 export function redact(message: string): string {
   let out = message;
-  for (const name of ['HF_TOKEN', 'UPSTASH_VECTOR_REST_TOKEN', 'UPSTASH_REDIS_REST_TOKEN']) {
+  for (const name of ['HF_TOKEN', 'UPSTASH_VECTOR_REST_TOKEN', 'UPSTASH_REDIS_REST_TOKEN', 'LUFFY_HASH_SALT']) {
     const secret = process.env[name]?.trim();
     if (secret) out = out.split(secret).join('[hidden]');
   }

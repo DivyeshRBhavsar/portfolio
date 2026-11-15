@@ -24,7 +24,7 @@ const dryRun = process.argv.includes('--dry-run');
 
 async function main() {
   loadEnv();
-  const { docs, skipped } = gatherSources();
+  const { docs, skipped } = await gatherSources();
   const { chunks, duplicates } = chunkDocs(docs);
 
   console.log(`Luffy knowledge build${dryRun ? ' (dry run)' : ''}\n`);

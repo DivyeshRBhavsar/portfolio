@@ -85,7 +85,12 @@ npm run knowledge:build            # gather → chunk → embed → update Upsta
 npm run knowledge:build -- --dry-run   # gather and chunk only (no Hugging Face or Upstash)
 npm run knowledge:search           # try retrieval on a fixed set of questions
 npm run knowledge:search -- "Does he build websites?"   # or your own questions
+npm run luffy:ask -- "Which projects used CatBoost?"     # ask the local /api/chat (keeps the session)
+npm run luffy:ask -- --new --base http://localhost:3123 "Hi!" "…"   # fresh session, other port
 ```
+
+The answering API is `app/api/chat/route.ts` (logic in `lib/luffy/`). Every limit, cap and threshold
+is in `lib/luffy/config.ts`; it also needs `LUFFY_HASH_SALT` (a long random secret for hashing IPs).
 
 **Rerun `npm run knowledge:build` whenever you add or edit a project story, a blog post,
 `content/life-story.json` or `content/services.json`**, otherwise Luffy answers from the old

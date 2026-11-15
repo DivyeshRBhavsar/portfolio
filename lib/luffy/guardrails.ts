@@ -1,10 +1,10 @@
-import fs from 'fs';
-import path from 'path';
+import raw from '@/content/luffy-guardrails.json';
 
 /**
  * Luffy's guardrails (content/luffy-guardrails.json): his persona and rules for the
  * system prompt, the question categories for the classifier, his canned replies, and
- * the test questions (Parts 2–4). Checked on load; a mistake throws naming the field, e.g.
+ * the test questions (Parts 2–4). Imported as a module, so it's bundled with the API
+ * route. Checked on first use; a mistake throws naming the field, e.g.
  *   content/luffy-guardrails.json: categories[3].counts_as must be one of gibberish, off_topic, …
  */
 
@@ -63,13 +63,7 @@ let cached: Guardrails | null = null;
 
 export function getGuardrails(): Guardrails {
   if (cached) return cached;
-  let data: unknown;
-  try {
-    data = JSON.parse(fs.readFileSync(path.join(process.cwd(), FILE), 'utf-8'));
-  } catch (error) {
-    throw new GuardrailsError(`${FILE}: not valid JSON (${(error as Error).message})`);
-  }
-  const root = obj(data, '(the file)');
+  const root = obj(raw as unknown, '(the file)');
 
   const p = obj(root.persona, 'persona');
   const persona = { name: str(p, 'name', 'persona.'), role: str(p, 'role', 'persona.'), rules: strs(p, 'rules', 'persona.') };
@@ -112,4 +106,14 @@ export function getGuardrails(): Guardrails {
 
   cached = { persona, categories, notSureReplies, limitReplies, testQuestions };
   return cached;
+}
+
+/** A guardrail category by id (undefined if the file doesn't have it). */
+export function category(id: string): GuardrailCategory | undefined {
+  return getGuardrails().categories.find((c) => c.id === id);
+}
+
+/** One of a list, at random. */
+export function pickOne<T>(items: readonly T[]): T {
+  return items[Math.floor(Math.random() * items.length)];
 }

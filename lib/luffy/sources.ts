@@ -1,10 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { TOPICS } from '@/lib/blogTopics';
+import { allCategories, categorizeRepos } from '@/lib/categories';
+import { getShowcaseRepos } from '@/lib/github';
 import { getLifeStory } from '@/lib/lifeStory';
 import { formatRange } from '@/lib/lifeStoryTypes';
 import { getAllPosts, getPostBySlug } from '@/lib/posts';
 import { getServices } from '@/lib/services';
+import { getStories, storiesByRepoId } from '@/lib/stories';
 import { isTodo, type Slide, type Story } from '@/lib/storyTypes';
 import { SITE_PATHS } from './config';
 
@@ -269,9 +272,97 @@ function servicesDoc(): SourceDoc {
   return { key: 'services:work-with-me', sourceType: 'services', title: 'Work with Divyesh', url: SITE_PATHS.services(), sections };
 }
 
+// ── Overviews (for broad questions: "which projects…", "what does he offer…") ──
+
+/** Each story's category names (from its GitHub repo's topics, as on /projects). */
+async function storyCategories(skipped: Skipped[]): Promise<Map<string, string[]>> {
+  const out = new Map<string, string[]>();
+  try {
+    const repos = await getShowcaseRepos();
+    if (repos.length === 0) throw new Error('no repos returned');
+    const [byRepo, cats] = await Promise.all([storiesByRepoId(getStories(), repos), categorizeRepos(repos)]);
+    const names = new Map(allCategories().map((c) => [c.slug, c.name.replace(/^[^\p{L}\p{N}]+/u, '').trim()]));
+    for (const [repoId, summary] of Object.entries(byRepo)) {
+      const slugs = cats[Number(repoId)]?.categories ?? [];
+      out.set(summary.slug, slugs.map((slug) => names.get(slug) ?? slug));
+    }
+  } catch (error) {
+    skipped.push({ file: 'GitHub (project categories)', reason: `unavailable (${(error as Error).message}); the projects overview uses story tags instead` });
+  }
+  return out;
+}
+
+async function overviewDocs(docs: SourceDoc[], skipped: Skipped[]): Promise<SourceDoc[]> {
+  const out: SourceDoc[] = [];
+  const categories = await storyCategories(skipped);
+
+  const stories = docs.filter((d) => d.sourceType === 'story');
+  if (stories.length) {
+    const entries = stories.map((d) => {
+      const slug = d.key.slice('story:'.length);
+      const overview = d.sections.find((s) => s.heading === 'Overview')?.text.split('\n') ?? [];
+      const hook = (overview[0] ?? '').replace(/([^.!?])$/, '$1.');
+      const tags = overview.find((l) => l.startsWith('Tags: '))?.slice('Tags: '.length) ?? '';
+      const areas = categories.get(slug)?.length ? categories.get(slug)!.join(', ') : tags;
+      return { title: d.title, areas, hook, url: d.url };
+    });
+    // A short list first: a list of different hooks blurs the meaning, while titles under a
+    // clear lead match "which projects did he build?" (in any language) far better.
+    const short = entries.map((e) => `${e.title}${e.areas ? ` (${e.areas})` : ''}`).join('; ');
+    const detailed = entries.map((e) => `- ${e.title}${e.areas ? ` (${e.areas})` : ''}: ${e.hook} Link: ${e.url}`).join('\n');
+    out.push({
+      key: 'overview:projects',
+      sourceType: 'story',
+      title: "Divyesh's projects",
+      url: '/projects',
+      sections: [
+        {
+          heading: 'Project list',
+          text: `The projects Divyesh Bhavsar has built (his portfolio projects, ${entries.length} in total): ${short}. Each one has a full story at /projects.`,
+          merge: false,
+        },
+        { heading: 'All project stories', text: `What each of Divyesh's ${entries.length} projects does:\n${detailed}`, merge: false },
+      ],
+    });
+  }
+
+  const posts = getAllPosts();
+  if (posts.length) {
+    const list = posts.map((p) => `- ${clean(p.title)}: ${clean(p.summary)} Link: ${SITE_PATHS.blog(p.slug)}`);
+    out.push({
+      key: 'overview:blog',
+      sourceType: 'blog',
+      title: 'Blog posts',
+      url: '/blog',
+      sections: [
+        {
+          heading: 'Post list',
+          text: `The blog posts Divyesh Bhavsar has written (${posts.length} in total): ${posts.map((p) => clean(p.title)).join('; ')}. All posts are at /blog.`,
+          merge: false,
+        },
+        { heading: 'All blog posts', text: `What each of Divyesh's ${posts.length} blog posts is about:\n${list.join('\n')}`, merge: false },
+      ],
+    });
+  }
+
+  const services = getServices().services;
+  if (services.length) {
+    const list = services.map((s) => `- ${s.name}: ${s.promise}`);
+    const link = `Details, and how a project with him works: ${SITE_PATHS.services()}`;
+    out.push({
+      key: 'overview:services',
+      sourceType: 'services',
+      title: 'What Divyesh offers',
+      url: SITE_PATHS.services(),
+      sections: [{ heading: 'All services', text: `Divyesh offers these services to businesses:\n${list.join('\n')}\n${link}`, merge: false }],
+    });
+  }
+  return out;
+}
+
 /** All sources, plus any files that couldn't be used (and why). */
-export function gatherSources(): { docs: SourceDoc[]; skipped: Skipped[] } {
+export async function gatherSources(): Promise<{ docs: SourceDoc[]; skipped: Skipped[] }> {
   const skipped: Skipped[] = [];
   const docs = [...storyDocs(skipped), ...blogDocs(skipped), lifeDoc(), servicesDoc()];
-  return { docs, skipped };
+  return { docs: [...docs, ...(await overviewDocs(docs, skipped))], skipped };
 }

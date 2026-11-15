@@ -56,6 +56,13 @@ export async function remove(ids: string[], batchSize = 500): Promise<void> {
   }
 }
 
+/** Chunks by id, with metadata (missing ids come back as null). */
+export async function fetchByIds(ids: string[]): Promise<{ id: string; metadata: ChunkMetadata }[]> {
+  if (ids.length === 0) return [];
+  const out = await call<({ id: string; metadata?: ChunkMetadata } | null)[]>('/fetch', { ids, includeMetadata: true });
+  return out.filter((v): v is { id: string; metadata: ChunkMetadata } => !!v?.metadata);
+}
+
 export type VectorMatch = { id: string; score: number; metadata: ChunkMetadata };
 
 /**

@@ -16,7 +16,18 @@ const REDUCED = '(prefers-reduced-motion: reduce)';
  * name). Screen readers get the whole line straight away; the full line is laid out
  * invisibly underneath so the bubble never changes size.
  */
-export default function PageHeroLuffy({ lines, headClass, bubbleClass }: { lines: string[]; headClass: string; bubbleClass: string }) {
+export default function PageHeroLuffy({
+  lines,
+  headClass,
+  bubbleClass,
+  textClass = '',
+}: {
+  lines: string[];
+  headClass: string;
+  bubbleClass: string;
+  /** Extra classes for the visible text (e.g. clamping it on phones; screen readers get it all). */
+  textClass?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [typed, setTyped] = useState(0);
   const [started, setStarted] = useState(false);
@@ -52,7 +63,7 @@ export default function PageHeroLuffy({ lines, headClass, bubbleClass }: { lines
       <LuffyHead talking={started && !done} className={headClass} />
       <p className={`rounded-2xl rounded-tl-sm border-2 border-ink bg-surface text-ink shadow-sticker ${bubbleClass}`}>
         <span className="sr-only">{line}</span>
-        <span aria-hidden="true" className="grid">
+        <span aria-hidden="true" className={`grid ${textClass}`}>
           <span className="invisible col-start-1 row-start-1">{line}</span>
           <span className="col-start-1 row-start-1">{line.slice(0, typed)}</span>
         </span>

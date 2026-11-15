@@ -1,5 +1,6 @@
 'use client';
 
+import { useId, useState } from 'react';
 import { Star, ExternalLink, Github } from 'lucide-react';
 import type { Category, ProjectCategories } from '@/lib/categories';
 import type { Repo } from '@/lib/github';
@@ -9,6 +10,8 @@ import StoryText from '@/components/projects/StoryText';
 import {
   cardCategoriesLabel,
   cardTechLabel,
+  categoryLessLabel,
+  categoryMoreLabel,
   categorySkillsLabel,
   watchStoryLabel,
 } from '@/components/character/luffyLines';
@@ -19,6 +22,10 @@ import {
  * project only under its main category, its other categories as labels on the card.
  * A category: every project with that category (main or secondary), as one grid.
  * Order within a grid comes from the server (FEATURED_ORDER, then most recent).
+ *
+ * Phones (< 640px): the chips stay in one sideways-scrolling row, spacing is tighter,
+ * and each category shows its name with a "More" button for its description and skills,
+ * so the first project is on the first screen. Tablet and desktop are unchanged.
  */
 export default function ProjectGallery({
   repos,
@@ -63,7 +70,7 @@ export default function ProjectGallery({
 
   return (
     <div className="projects-list">
-      <div className="mb-10">
+      <div className="mb-10 max-sm:mb-2.5">
         <CategoryChips
           categories={categories}
           counts={counts}
@@ -71,6 +78,7 @@ export default function ProjectGallery({
           selected={current?.slug ?? null}
           onSelect={onSelect}
           kind="projects"
+          oneRowOnPhones
         />
       </div>
 
@@ -88,31 +96,14 @@ export default function ProjectGallery({
           </div>
         </section>
       ) : (
-        <div className="space-y-16">
+        <div className="space-y-16 max-sm:space-y-10">
           {categories.map((category) => {
             const inSection = repos.filter((r) => catsOf(r).main === category.slug);
             if (inSection.length === 0) return null;
             return (
               <section key={category.slug} aria-labelledby={`category-${category.slug}`}>
-                <h2
-                  id={`category-${category.slug}`}
-                  className="font-display text-2xl font-bold text-ink"
-                >
-                  {category.name}
-                </h2>
-                <p className="mt-2 max-w-2xl text-ink-muted">{category.description}</p>
-                {category.skills.length > 0 && (
-                  <>
-                    <ul aria-label={categorySkillsLabel} className="mt-4 flex flex-wrap gap-2">
-                      {category.skills.map((skill) => (
-                        <li key={skill} className="pill border-ink bg-sun py-1 text-xs text-on-sun">
-                          {skill}
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-                <div className="mt-6 grid sm:grid-cols-2 gap-5">
+                <CategoryIntro category={category} />
+                <div className="mt-6 grid sm:grid-cols-2 gap-5 max-sm:mt-1">
                   {inSection.map((r) => card(r, category.slug))}
                 </div>
               </section>
@@ -121,6 +112,49 @@ export default function ProjectGallery({
         </div>
       )}
     </div>
+  );
+}
+
+/**
+ * A category's heading, description and skills. On phones only the name shows, with a
+ * small "More" button (aria-expanded) for the rest; from 640px up it's all shown as before.
+ */
+function CategoryIntro({ category }: { category: Category }) {
+  const [open, setOpen] = useState(false);
+  const detailsId = useId();
+  const hasDetails = !!category.description || category.skills.length > 0;
+  return (
+    <>
+      <div className="max-sm:flex max-sm:items-center max-sm:justify-between max-sm:gap-3">
+        <h2 id={`category-${category.slug}`} className="font-display text-2xl font-bold text-ink max-sm:text-xl">
+          {category.name}
+        </h2>
+        {hasDetails && (
+          <button
+            type="button"
+            aria-expanded={open}
+            aria-controls={detailsId}
+            onClick={() => setOpen((o) => !o)}
+            className="-my-2 inline-flex min-h-11 shrink-0 items-center rounded-full px-2 font-mono text-xs font-medium text-red-deep underline underline-offset-4 hover:no-underline sm:hidden"
+          >
+            {open ? categoryLessLabel : categoryMoreLabel}
+            <span className="sr-only">: {category.name}</span>
+          </button>
+        )}
+      </div>
+      <div id={detailsId} className={open ? '' : 'max-sm:hidden'}>
+        <p className="mt-2 max-w-2xl text-ink-muted">{category.description}</p>
+        {category.skills.length > 0 && (
+          <ul aria-label={categorySkillsLabel} className="mt-4 flex flex-wrap gap-2">
+            {category.skills.map((skill) => (
+              <li key={skill} className="pill border-ink bg-sun py-1 text-xs text-on-sun">
+                {skill}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </>
   );
 }
 

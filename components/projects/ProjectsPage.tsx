@@ -82,7 +82,7 @@ export default async function ProjectsPage() {
           </>
         }
       />
-      <div className="max-w-5xl mx-auto px-6 pt-8 pb-16 sm:pt-10">
+      <div className="max-w-5xl mx-auto px-6 pt-2 pb-16 sm:pt-10">
         <ProjectsView
           repos={repos}
           categories={allCategories()}

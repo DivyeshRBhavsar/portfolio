@@ -350,6 +350,9 @@ export const storyCategoryLines: Record<string, string[]> = {
 };
 
 export const categoryAllLabel = "All";
+// Phones: the button under a category name that shows its description and skills.
+export const categoryMoreLabel = "More";
+export const categoryLessLabel = "Less";
 export const categoryChipsLabel = {
   projects: "Filter projects by expertise",
   stories: "Filter stories by expertise",

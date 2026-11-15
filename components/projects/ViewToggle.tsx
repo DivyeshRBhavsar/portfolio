@@ -20,7 +20,7 @@ export default function ViewToggle({
     <div
       role="group"
       aria-label={projectsViewLabels.group}
-      className="mb-10 inline-flex flex-wrap gap-1 rounded-3xl border-2 border-ink bg-surface p-1"
+      className="mb-10 inline-flex flex-wrap gap-1 rounded-3xl border-2 border-ink bg-surface p-1 max-sm:mb-2 max-sm:p-0.5"
     >
       {VIEWS.map((v) => (
         <button

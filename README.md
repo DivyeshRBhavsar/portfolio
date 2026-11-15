@@ -65,6 +65,34 @@ tune:
   "About" description on GitHub directly — it flows straight through, no rebuild needed beyond the
   hourly cache.
 
+## Luffy's knowledge base (chatbot)
+
+Luffy answers questions from the site's own public content: project stories
+(`content/project_stories/`), blog posts (`content/blog/`), the home page life story
+(`content/life-story.json`, without the email address or anything still marked TODO) and the Work
+with me page (`content/services.json`). That content is split into short chunks, turned into
+vectors with `Qwen/Qwen3-Embedding-0.6B` (1024 dimensions) through Hugging Face Inference
+Providers, and stored in an Upstash Vector index (dimension 1024, cosine). A keyword index for
+hybrid search is saved to `data/luffy-keywords.json`.
+
+Set these in `.env.local` (see `.env.example`): `HF_TOKEN` (a token with the "Make calls to
+Inference Providers" permission), `HF_CHAT_MODEL` (optional, default `Qwen/Qwen3.5-9B`),
+`UPSTASH_VECTOR_REST_URL`, `UPSTASH_VECTOR_REST_TOKEN`, `UPSTASH_REDIS_REST_URL` and
+`UPSTASH_REDIS_REST_TOKEN`.
+
+```bash
+npm run knowledge:build            # gather → chunk → embed → update Upstash → keyword index
+npm run knowledge:build -- --dry-run   # gather and chunk only (no Hugging Face or Upstash)
+npm run knowledge:search           # try retrieval on a fixed set of questions
+npm run knowledge:search -- "Does he build websites?"   # or your own questions
+```
+
+**Rerun `npm run knowledge:build` whenever you add or edit a project story, a blog post,
+`content/life-story.json` or `content/services.json`**, otherwise Luffy answers from the old
+content. It's incremental: unchanged chunks are skipped, changed ones are re-embedded, and chunks
+that no longer exist are deleted. It checks that the index dimension matches the model before
+writing anything, and never prints tokens. Commit the updated `data/luffy-keywords.json`.
+
 ## Deploy for free (Vercel)
 
 1. Push this project to a new GitHub repo.

@@ -27,10 +27,39 @@ const mono = IBM_Plex_Mono({
   weight: ['400', '500'],
 });
 
+/**
+ * The site's address, so link previews get absolute URLs (og:image etc.): NEXT_PUBLIC_SITE_URL
+ * if set, else the Vercel production domain (set automatically on Vercel, previews included),
+ * else localhost for local builds.
+ */
+function siteUrl(): URL {
+  const explicit = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (explicit) return new URL(explicit);
+  const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (vercel) return new URL(`https://${vercel}`);
+  return new URL('http://localhost:3000');
+}
+
+const SITE_TITLE = 'Divyesh Bhavsar · AI Engineer & Data Scientist';
+const SITE_DESCRIPTION =
+  'Meet Luffy, my guide. Explore my projects as short stories, ask questions about my work, and see how I can help your team.';
+
+// The link preview image comes from the file convention: app/opengraph-image.png and
+// app/twitter-image.png, with their .alt.txt files (not set here, so nothing overrides them).
 export const metadata: Metadata = {
-  title: 'Divyesh Bhavsar — Data Analyst & AI Resident',
-  description:
-    'Portfolio of Divyesh Bhavsar: data analytics, machine learning projects, and applied AI work.',
+  metadataBase: siteUrl(),
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: 'website',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

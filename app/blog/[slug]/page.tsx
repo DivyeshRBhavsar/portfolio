@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
@@ -8,6 +10,15 @@ import PostMetaLine from '@/components/blog/PostMetaLine';
 import ReadingRoom from '@/components/blog/ReadingRoom';
 import { contactDiscussPost } from '@/components/character/luffyLines';
 import { headingComponents } from '@/components/blog/mdxHeadings';
+
+/** The site's link-preview image (app/opengraph-image.png) and its alt text, for posts. */
+const SITE_IMAGE = {
+  url: '/opengraph-image.png',
+  width: 1200,
+  height: 630,
+  type: 'image/png',
+  alt: fs.readFileSync(path.join(process.cwd(), 'app', 'opengraph-image.alt.txt'), 'utf-8').trim(),
+};
 
 // Reader fonts ("Aa"), for post pages only. preload: false, so a font file is fetched
 // only when the reader picks it (the CSS that uses it is in app/globals.css).
@@ -43,12 +54,21 @@ export async function generateMetadata({
   return {
     title: `${post.meta.title} — Divyesh Bhavsar`,
     description: post.meta.summary,
+    // A post's own openGraph replaces the site's (and with it the image from
+    // app/opengraph-image.png), so the site image is added back here, with the same alt.
     openGraph: {
       type: 'article',
       title: post.meta.title,
       description: post.meta.summary,
       publishedTime: post.meta.date || undefined,
       tags: post.meta.tags,
+      images: [SITE_IMAGE],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: post.meta.title,
+      description: post.meta.summary,
+      images: [SITE_IMAGE],
     },
   };
 }

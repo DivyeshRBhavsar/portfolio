@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
 import { getAllPosts } from '@/lib/posts';
 import BlogLibrary from '@/components/blog/BlogLibrary';
+import PageHero from '@/components/PageHero';
+import {
+  blogHeroCounts,
+  blogHeroLines,
+  blogHeroSubtitle,
+  blogHeroTitle,
+} from '@/components/character/luffyLines';
+import { fill } from '@/components/character/speech';
 
 export const metadata: Metadata = {
   title: 'Blog — Divyesh Bhavsar',
@@ -10,20 +18,27 @@ export const metadata: Metadata = {
 
 export default function BlogIndexPage() {
   const posts = getAllPosts();
+  const minutes = posts.reduce((sum, p) => sum + p.readingMinutes, 0);
+  const counts = [
+    fill(posts.length === 1 ? blogHeroCounts.posts.one : blogHeroCounts.posts.other, { n: String(posts.length) }),
+    ...(minutes > 0 ? [fill(blogHeroCounts.minutes, { n: String(minutes) })] : []),
+  ].join(' · ');
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-16">
-      <p className="font-mono text-sm text-red-deep mb-2">/ blog</p>
-      <h1 className="font-display text-3xl font-bold text-ink mb-3">Writing</h1>
-      <p className="text-ink-muted mb-10 max-w-2xl">
-        Notes on projects, pipelines, and the decisions behind them.
-      </p>
-
-      {posts.length === 0 ? (
-        <p className="text-ink-muted font-mono text-sm">No posts published yet.</p>
-      ) : (
-        <BlogLibrary posts={posts} />
-      )}
+    <div>
+      <PageHero
+        title={blogHeroTitle}
+        subtitle={blogHeroSubtitle}
+        luffy={blogHeroLines}
+        extras={<span className="font-mono">{counts}</span>}
+      />
+      <div className="max-w-5xl mx-auto px-6 pt-8 pb-16 sm:pt-10">
+        {posts.length === 0 ? (
+          <p className="text-ink-muted font-mono text-sm">No posts published yet.</p>
+        ) : (
+          <BlogLibrary posts={posts} />
+        )}
+      </div>
     </div>
   );
 }

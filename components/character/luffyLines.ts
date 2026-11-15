@@ -613,3 +613,144 @@ export const workPlannerSummaryService = "Service";
 export const workClosingTitle = "Have a project in mind?";
 export const workClosingLuffy = "Tell Divyesh what you'd like to fix. The first call is free, and there's no obligation!";
 export const workClosingButton = "Talk about your project";
+
+// ── 13. Contact ──
+// The contact page. The purposes and their fields are in content/contact.json; the
+// labels, Luffy's lines and the error messages (shown by the form and the server) here.
+
+// Greeting (one picked at random). {nameComma} = ", Priya" when the name is known.
+export const contactGreetings = [
+  "Hi{nameComma}! What brings you here?",
+  "Hey{nameComma}! What can Divyesh help you with?",
+  "Hi{nameComma}! Pick what fits and I'll pass it on to Divyesh.",
+];
+// Under the greeting. {divyeshTime} e.g. "8:15 pm", {city} = DIVYESH_CITY.
+// "Soon" between 9:00 and 21:00 Toronto time, otherwise "tomorrow morning".
+export const contactTimeSoon = "It's {divyeshTime} in {city} right now, so Divyesh will likely reply soon.";
+export const contactTimeLater = "It's {divyeshTime} in {city} right now, so Divyesh will likely reply tomorrow morning.";
+
+// Modes
+export const contactModeFull = "Show me the full form";
+export const contactModeChat = "Chat with Luffy instead";
+
+// Headings and labels
+export const contactPurposeHeading = "What's this about?";
+export const contactDetailsHeading = "The details";
+export const contactAboutYouHeading = "About you";
+export const contactNameLabel = "Your name";
+export const contactEmailLabel = "Your email";
+export const contactMessageLabel = "Your message";
+export const contactLinkedInLabel = "Your LinkedIn profile";
+export const contactLinkedInPlaceholder = "https://linkedin.com/in/…";
+export const contactOptional = "(optional)";
+export const contactSelectPlaceholder = "Choose one";
+export const contactAboutGroups = { projects: "Projects", posts: "Blog posts" };
+// {n} characters typed of {total}
+export const contactCharCount = "{n} / {total}";
+export const contactPlanTitle = "Your project plan";
+export const contactPlanRemove = "Remove plan";
+// Changing the purpose. {title} = the old purpose.
+export const contactPurposeCleared = "Details for {title} cleared.";
+export const contactUndo = "Undo";
+export const contactDismiss = "Dismiss";
+export const contactDraftRestored = "Restored your draft";
+export const contactDraftClear = "Clear";
+export const contactSend = "Send message";
+export const contactSending = "Sending…";
+export const contactFixErrors = "A few things need a look. I've marked them below.";
+
+// Live summary
+export const contactSummaryTitle = "How your message will look";
+export const contactSummaryToggle = "Preview your message";
+export const contactSummaryEmpty = "Pick what this is about to see a preview.";
+export const contactSummaryFrom = "From";
+
+// Chat mode. {title} = a field's label.
+export const contactChatProgress = "{n} of {total}";
+export const contactChatAsk = "{title}?";
+// The chat's first question (the band at the top already says hello).
+export const contactChatPurpose = "Pick whichever fits best and we'll take it from there.";
+export const contactChatName = "What's your name?";
+export const contactChatEmail = "And the best email to reply to?";
+export const contactChatMessage = "What would you like to say to Divyesh?";
+export const contactChatOptional = "Want to add anything else?";
+export const contactChatReview = "All set! Here's what I'll send. Look good?";
+export const contactBack = "Back";
+export const contactNext = "Next";
+export const contactSkip = "Skip";
+export const contactChangeSomething = "Change something";
+
+// Under the form
+export const contactLinkedInButton = "LinkedIn";
+export const contactCopyEmail = "Copy email";
+export const contactCopied = "Email copied!";
+export const contactCopyFallback = "Couldn't copy it automatically. Here it is:";
+export const contactBookCall = "Book a 15-minute call";
+
+// After sending
+export const contactSuccessLine = "Sent! 🎉 Divyesh will get back to you soon.";
+export const contactNextStory = "Watch a project story";
+export const contactNextBlog = "Read the blog";
+export const contactErrorLine = "Oops, that didn't go through. Give it another try in a moment, or copy the email and write to Divyesh directly.";
+export const contactTryAgain = "Try again";
+
+// Errors (the server sends the same ones). {title} = a field's label, {n} = a number.
+export const contactErrors = {
+  required: "{title} is required.",
+  nameRequired: "Please tell me your name.",
+  emailRequired: "Please add your email so Divyesh can reply.",
+  messageRequired: "Please write a short message.",
+  tooLong: "{title} must be {n} characters or fewer.",
+  tooShort: "{title} needs at least {n} characters.",
+  email: "That email doesn't look right. Check for typos?",
+  url: "Please enter a full link, starting with https://",
+  option: "Please pick one of the options for {title}.",
+  purpose: "Please pick what this is about.",
+  tooFast: "That was quick! Please take a moment, then send it again.",
+  cooldown: "You just sent a message. Please wait a minute before sending another.",
+  notConfigured: "Sending isn't set up on this site yet. Please copy the email and write directly.",
+  failed: "Something went wrong sending your message.",
+  invalid: "That message couldn't be read. Please try again.",
+};
+
+// Links to the contact page from elsewhere. {title} = "an AI Engineer", "a Data Scientist".
+export const contactHireMe = "Hire me as {title}";
+export const contactAskAboutProject = "Ask about this project";
+export const contactDiscussPost = "Discuss this post";
+
+// ── 14. Page heroes ──
+// The band at the top of Projects, Blog and Contact (components/PageHero.tsx; Work with
+// me's text comes from content/services.json). Luffy says one of his lines at random.
+// Counts use {n}.
+
+export const projectsHeroTitle = "Projects";
+export const projectsHeroSubtitle = "Real problems, honest numbers, and the stories behind them.";
+export const projectsHeroLines = [
+  "Pick a project, or let me tell you its story!",
+  "Every project here has a story. Want me to tell you one?",
+  "Browse the list, or switch to Story mode and I'll walk you through it!",
+];
+// "12 projects · 7 stories · 5 areas"
+export const projectsHeroCounts = {
+  projects: { one: "1 project", other: "{n} projects" },
+  stories: { one: "1 story", other: "{n} stories" },
+  areas: { one: "1 area", other: "{n} areas" },
+};
+export const projectsHeroGitHub = "Live from GitHub";
+
+export const blogHeroTitle = "Blog";
+export const blogHeroSubtitle = "Lessons from building things, written for curious readers.";
+export const blogHeroLines = [
+  "Grab a coffee ☕, there's plenty to read.",
+  "Pull up a chair! Divyesh writes these for curious people like you.",
+  "Short on time? Pick a topic, or let me pick a post for you.",
+];
+// "6 posts · ~48 min of reading"
+export const blogHeroCounts = {
+  posts: { one: "1 post", other: "{n} posts" },
+  minutes: "~{n} min of reading",
+};
+
+// Contact (Luffy greets with contactGreetings, in section 13).
+export const contactHeroTitle = "Let's talk";
+export const contactHeroSubtitle = "Tell me what you have in mind, and I'll get back to you.";

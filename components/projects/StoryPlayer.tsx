@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react';
+import Link from 'next/link';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ChevronLeft, ChevronRight, LayoutGrid, Pause, Play } from 'lucide-react';
 import AskLuffyPanel from '@/components/character/AskLuffyPanel';
 import LuffyHead from '@/components/character/LuffyHead';
 import {
+  contactAskAboutProject,
   slideCounterLabel,
   storyComingSoonLines,
   storyControlLabels,
@@ -299,6 +301,9 @@ export default function StoryPlayer({
               <button type="button" onClick={() => setAsk(true)} className={theatreButton}>
                 {storyControls.askLuffy}
               </button>
+              <Link href={`/contact?purpose=question&about=${encodeURIComponent(story.slug)}`} className={theatreButton}>
+                {contactAskAboutProject}
+              </Link>
               <button type="button" onClick={onClose} className={theatreButton}>
                 {storyControls.backToList}
               </button>

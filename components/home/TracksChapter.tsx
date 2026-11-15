@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Download } from 'lucide-react';
 import { formatRange, type Principle, type Track } from '@/lib/lifeStoryTypes';
 import {
+  contactHireMe,
   homeDownloadResume,
   homeEvidenceHeading,
   homePrinciplesHeading,
@@ -14,6 +15,7 @@ import {
   homeTrackExperienceHeading,
   homeWatchStoryPrefix,
 } from '@/components/character/luffyLines';
+import { fill } from '@/components/character/speech';
 import { KindTag } from './ExperienceChapter';
 import { NamedStoryLink } from './StoryLinks';
 
@@ -114,17 +116,25 @@ export default function TracksChapter({ items, principles }: { items: Track[]; p
               </div>
             )}
 
-            {track.resume && (
-              <a
-                href={track.resume}
-                download
-                className="mt-6 inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-ink bg-red px-4 py-2 text-sm font-medium text-white transition-all hover:-translate-y-0.5 hover:shadow-sticker"
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Link
+                href={`/contact?purpose=job&role=${encodeURIComponent(track.id)}`}
+                className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-ink bg-sun px-4 py-2 text-sm font-medium text-on-sun transition-all hover:-translate-y-0.5 hover:shadow-sticker motion-reduce:hover:translate-y-0"
               >
-                <Download size={16} aria-hidden="true" />
-                {homeDownloadResume}
-                <span className="sr-only"> ({track.role})</span>
-              </a>
-            )}
+                {fill(contactHireMe, { title: `${/^[aeiou]/i.test(track.role) ? 'an' : 'a'} ${track.role}` })}
+              </Link>
+              {track.resume && (
+                <a
+                  href={track.resume}
+                  download
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-ink bg-red px-4 py-2 text-sm font-medium text-white transition-all hover:-translate-y-0.5 hover:shadow-sticker"
+                >
+                  <Download size={16} aria-hidden="true" />
+                  {homeDownloadResume}
+                  <span className="sr-only"> ({track.role})</span>
+                </a>
+              )}
+            </div>
           </div>
         </>
       )}

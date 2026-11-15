@@ -1,6 +1,16 @@
 import { allCategories, categorizeRepos, type ProjectCategories } from '@/lib/categories';
 import { getShowcaseRepos } from '@/lib/github';
 import { getStories, storiesByRepoId } from '@/lib/stories';
+import { ExternalLink } from 'lucide-react';
+import PageHero from '@/components/PageHero';
+import {
+  projectsHeroCounts,
+  projectsHeroGitHub,
+  projectsHeroLines,
+  projectsHeroSubtitle,
+  projectsHeroTitle,
+} from '@/components/character/luffyLines';
+import { fill } from '@/components/character/speech';
 import ProjectsView from './ProjectsView';
 
 /** Shared by /projects and /projects/<slug> (server: GitHub and stories, cached hourly). */
@@ -18,30 +28,49 @@ export default async function ProjectsPage() {
     if (cats) storyCategories[summary.slug] = cats;
   }
 
+  // Hero counts: showcase repos, stories, and areas with at least one project or story.
+  const areas = new Set(
+    [...Object.values(repoCategories), ...Object.values(storyCategories)].flatMap((c) => c.categories)
+  );
+  const count = (forms: { one: string; other: string }, n: number) =>
+    fill(n === 1 ? forms.one : forms.other, { n: String(n) });
+  const counts = [
+    count(projectsHeroCounts.projects, repos.length),
+    count(projectsHeroCounts.stories, stories.length),
+    count(projectsHeroCounts.areas, areas.size),
+  ].join(' · ');
+
   return (
-    <div className="max-w-5xl mx-auto px-6 py-16">
-      <p className="font-mono text-sm text-red-deep mb-2">/ projects</p>
-      <h1 className="font-display text-3xl font-bold text-ink mb-3">Projects</h1>
-      <p className="text-ink-muted mb-10 max-w-2xl">
-        Pulled live from{' '}
-        <a
-          href="https://github.com/DivyeshRBhavsar"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-red-deep underline-offset-4 hover:underline"
-        >
-          github.com/DivyeshRBhavsar
-        </a>
-        , refreshed hourly &mdash; this list updates itself as new repos are pushed.
-      </p>
-      <ProjectsView
-        repos={repos}
-        categories={allCategories()}
-        repoCategories={repoCategories}
-        storyCategories={storyCategories}
-        stories={stories}
-        storyByRepoId={storyByRepoId}
+    <div>
+      <PageHero
+        title={projectsHeroTitle}
+        subtitle={projectsHeroSubtitle}
+        luffy={projectsHeroLines}
+        extras={
+          <>
+            <span className="font-mono">{counts}</span>
+            <a
+              href="https://github.com/DivyeshRBhavsar"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-6 items-center gap-1 font-mono text-ink underline underline-offset-4 hover:no-underline"
+            >
+              {projectsHeroGitHub}
+              <ExternalLink size={13} aria-hidden="true" />
+            </a>
+          </>
+        }
       />
+      <div className="max-w-5xl mx-auto px-6 pt-8 pb-16 sm:pt-10">
+        <ProjectsView
+          repos={repos}
+          categories={allCategories()}
+          repoCategories={repoCategories}
+          storyCategories={storyCategories}
+          stories={stories}
+          storyByRepoId={storyByRepoId}
+        />
+      </div>
     </div>
   );
 }

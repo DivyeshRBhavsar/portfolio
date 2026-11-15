@@ -6,6 +6,7 @@ import { MDXRemote } from 'next-mdx-remote/rsc';
 import { getAllPosts, getPostBySlug } from '@/lib/posts';
 import PostMetaLine from '@/components/blog/PostMetaLine';
 import ReadingRoom from '@/components/blog/ReadingRoom';
+import { contactDiscussPost } from '@/components/character/luffyLines';
 import { headingComponents } from '@/components/blog/mdxHeadings';
 
 // Reader fonts ("Aa"), for post pages only. preload: false, so a font file is fetched
@@ -78,6 +79,14 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         <div className="reader-body prose prose-neutral max-w-none prose-headings:font-display prose-headings:text-ink prose-p:text-ink prose-li:text-ink prose-strong:text-ink prose-a:text-red-deep prose-th:text-ink prose-td:text-ink">
           <MDXRemote source={post.content} components={headingComponents()} />
         </div>
+        <footer className="mt-12 border-t-2 border-ink/10 pt-6">
+          <Link
+            href={`/contact?purpose=question&about=${encodeURIComponent(slug)}`}
+            className="inline-flex min-h-11 items-center gap-2 rounded-full border-2 border-ink bg-surface px-4 py-2 text-sm font-medium text-ink transition-colors hover:bg-sun hover:text-on-sun"
+          >
+            💬 {contactDiscussPost}
+          </Link>
+        </footer>
       </article>
     </ReadingRoom>
   );

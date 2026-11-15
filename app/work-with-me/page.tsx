@@ -17,7 +17,7 @@ import FaqAccordion from '@/components/services/FaqAccordion';
 import ProcessRoadmap from '@/components/services/ProcessRoadmap';
 import ProjectPlanner from '@/components/services/ProjectPlanner';
 import ServicesExplorer from '@/components/services/ServicesExplorer';
-import TypedLuffy from '@/components/services/TypedLuffy';
+import PageHero from '@/components/PageHero';
 import { contactHref } from '@/components/services/planEvents';
 import { getServices } from '@/lib/services';
 
@@ -46,20 +46,24 @@ export default function WorkWithMePage() {
   return (
     <div>
       {/* 1. Hero */}
-      <section className="border-b-2 border-ink/10 bg-peach">
-        <div className="mx-auto max-w-5xl px-6 py-14 sm:py-20">
-          <h1 className="font-display text-4xl font-bold leading-tight text-ink sm:text-5xl">{hero.title}</h1>
-          <p className="mt-4 max-w-2xl text-lg text-ink">{hero.subtitle}</p>
-          <TypedLuffy line={hero.luffy} className="mt-8" />
-          {capacity && <CapacityBadge capacity={capacity} className="mt-8" />}
-          {where && (
-            <p className="mt-5 flex max-w-2xl items-start gap-2 text-sm text-ink-muted">
-              <MapPin size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-red-deep" />
-              {where}
-            </p>
-          )}
-        </div>
-      </section>
+      <PageHero
+        title={hero.title}
+        subtitle={hero.subtitle}
+        luffy={hero.luffy}
+        extras={
+          capacity || where ? (
+            <>
+              {capacity && <CapacityBadge capacity={capacity} />}
+              {where && (
+                <p className="mt-2 flex max-w-2xl basis-full items-start gap-2">
+                  <MapPin size={16} aria-hidden="true" className="mt-0.5 shrink-0 text-red-deep" />
+                  {where}
+                </p>
+              )}
+            </>
+          ) : undefined
+        }
+      />
 
       <div className="mx-auto max-w-5xl px-6">
         {/* 2–3. What would you like to fix? + the services */}

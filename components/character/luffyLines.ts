@@ -461,3 +461,96 @@ export const readerDefaultLabel = "Default";
 export const readerResetLabel = "Reset to default";
 // Shown (and read out) for a moment after resetting.
 export const readerResetDone = "Settings reset";
+
+// ── 11. Home page life story ──
+// The chapters under the stage (their titles and Luffy's lines are in
+// content/life-story.json). Labels and Luffy's reactions here. Edit freely.
+
+// The short intro under the stage (above "My story so far").
+export const homeRoleLine = "AI Engineer & Data Scientist · AI Resident at Apziva";
+// How the "portfolio" story slug is named on cards (it links to the web projects).
+export const homeStoryPortfolioTitle = "This portfolio site";
+
+// Chapter 1
+export const homeCertificationsLabel = "Certifications";
+
+// Named story links on the home page: "<label> <Project name> ▶". Screen readers hear
+// "{prefix}: <Project name>".
+export const homeWatchStoryPrefix = "Watch the story";
+
+// Chapter 2
+export const homeDidLabel = "What I did";
+export const homeLearnedLabel = "What I learned";
+export const homeKindLabels = { software: "Software", data: "Data" };
+export const homeExperienceViewLabel = "How to show my experience";
+export const homeExperienceViews = { timeline: "Timeline", query: "Query my experience" };
+
+// The SQL terminal (Chapter 2, "Query my experience")
+export const sqlTerminalTitle = "career.sql";
+export const sqlPresetsLabel = "Ready-made queries";
+export const sqlPresets = [
+  { label: "Latest 3 jobs", sql: "SELECT role, company, start FROM career ORDER BY start DESC LIMIT 3" },
+  { label: "What he does now", sql: "SELECT role, company FROM career WHERE end = 'present'" },
+  { label: "Software roles", sql: "SELECT company, role FROM career WHERE kind = 'software'" },
+  { label: "Degrees", sql: "SELECT degree, school, end FROM education" },
+  { label: "AI toolbox", sql: "SELECT skill FROM toolbox WHERE track = 'AI Engineer'" },
+];
+export const sqlInputLabel = "Your SQL query";
+export const sqlPlaceholder = "SELECT * FROM career WHERE kind = 'data'";
+export const sqlRunLabel = "Run";
+export const sqlTablesHint = "Tables: career (role, company, kind, place, start, end) · education (degree, field, school, start, end) · toolbox (skill, track)";
+export const sqlResultLabel = "Query result";
+export const sqlRowCount = { one: "1 row", other: "{n} rows" };
+export const sqlNull = "—";
+// Luffy's reactions to a query. {n} = number of rows
+export const sqlSuccessLines = [
+  "{n} rows, coming right up! 📊",
+  "Nice query! Here's what I found.",
+  "Look at you, writing SQL! Here you go.",
+];
+export const sqlEmptyLines = [
+  "Hmm, no rows match that. Try a looser filter?",
+  "Nothing there! Maybe try LIKE with a % or two.",
+];
+export const sqlErrorLines = [
+  "Oops, I couldn't read that one. Check the note below!",
+  "That one tripped me up. Here's what went wrong:",
+  "Almost! I only speak simple SQL. Here's the problem:",
+];
+export const sqlIdleLine = "Pick a query or write your own. I'll run it on Divyesh's career!";
+// What went wrong ({table}, {column}, {columns}, {word} are filled in).
+export const sqlErrors = {
+  empty: "Type a query first, for example: SELECT * FROM career",
+  notSelect: "I only understand SELECT queries: SELECT … FROM … [WHERE …] [ORDER BY …] [LIMIT …]",
+  noFrom: "A query needs FROM and a table: career, education or toolbox.",
+  unknownTable: "There's no table '{table}'. Try career, education or toolbox.",
+  unknownColumn: "There's no column '{column}' in {table}. Try: {columns}.",
+  unsupported: "'{word}' isn't supported here. I understand WHERE with =, !=, LIKE, < and >, joined by AND, plus ORDER BY and LIMIT.",
+  badValue: "Expected a value after {word}: text in single quotes like 'data', or a number.",
+  badOperator: "Expected =, !=, LIKE, < or > after {column}.",
+  unclosedString: "A text value is missing its closing quote (').",
+  badLimit: "LIMIT needs a whole number, like LIMIT 3.",
+  unexpected: "I didn't expect '{word}' there.",
+  noColumns: "List the columns to show after SELECT (or * for all of them).",
+};
+
+// Chapter 3
+export const homeRolePickerLabel = "Pick a role";
+export const homePitchHeading = "Why me";
+export const homeEvidenceHeading = "The proof";
+export const homeTrackExperienceHeading = "Where I've done it";
+export const homeSkillsHeading = "Skills";
+export const homeDownloadResume = "Download résumé";
+export const homePrinciplesHeading = "How I work";
+// Shown before the story's name under each principle.
+export const homeProofLink = "See the proof:";
+
+// Chapter 4. {date} = e.g. "November 2026"
+export const homeLastUpdated = "Last updated {date}";
+export const homeRepoOnGitHub = "on GitHub";
+
+// Let's talk
+export const homeLinkedInLabel = "LinkedIn";
+export const homeEmailLabel = "Email me";
+export const homeContactPageLabel = "Contact page";
+export const footerEmailLabel = "Email";

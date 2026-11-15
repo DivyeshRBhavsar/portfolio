@@ -1,0 +1,278 @@
+{
+  "_note": "Content for the home page life story. Replace every TODO with real details. Anything still containing TODO is hidden on the site.",
+  "intro": {
+    "title": "My story so far",
+    "luffy": "Want the story behind the projects? Scroll with me, I'll walk you through it!"
+  },
+  "education": {
+    "title": "Chapter 1: Learning the craft",
+    "luffy": "It all started in the classroom. Here's how Divyesh's path took shape.",
+    "stops": [
+      {
+        "degree": "Bachelor of Engineering (B.E.)",
+        "field": "Computer Science",
+        "school": "SAL College of Engineering",
+        "place": "Ahmedabad, Gujarat, India",
+        "start": "2017",
+        "end": "2021",
+        "highlights": [
+          "Foundations in programming (C++, Python, Java) and databases (MySQL, MongoDB)",
+          "Worked alongside studies as a Python developer intern and an Android developer intern"
+        ]
+      },
+      {
+        "degree": "Master of Applied Science (MASc)",
+        "field": "Computer Engineering",
+        "school": "Memorial University of Newfoundland",
+        "place": "St. John's, Newfoundland and Labrador, Canada",
+        "start": "2022-01",
+        "end": "2023-10",
+        "highlights": [
+          "Two-factor login that checks your password and your face, built with OpenCV, LBPH and MySQL"
+        ],
+        "project": {
+          "label": "Final project",
+          "name": "Face Recognition Login System",
+          "story": "face-recognition-login"
+        }
+      }
+    ],
+    "certifications": [
+      {
+        "name": "Google Data Analytics Certificate",
+        "year": "2025"
+      },
+      {
+        "name": "AWS Certified Cloud Practitioner",
+        "year": "2024"
+      }
+    ]
+  },
+  "experience": {
+    "title": "Chapter 2: Learning on the job",
+    "luffy": "Every job taught him something. Some of the best lessons came from the least expected places!",
+    "jobs": [
+      {
+        "role": "AI Response Evaluator (Freelance)",
+        "company": "Mercor",
+        "place": "Remote",
+        "start": "TODO: YYYY-MM",
+        "end": "present",
+        "kind": "data",
+        "did": "Evaluating AI model responses against detailed rubric scales on freelance projects",
+        "learned": "Judging an answer fairly against a rubric takes as much rigour as writing one"
+      },
+      {
+        "role": "AI Resident",
+        "company": "Apziva",
+        "place": "Canada (remote)",
+        "start": "2026-05",
+        "end": "present",
+        "kind": "data",
+        "did": "Designing and building machine learning solutions for real client projects: customer happiness prediction, a two-layer term deposit calling model, and an LLM-based candidate ranking pipeline",
+        "learned": "Real client data is messy and small, so honest evaluation matters as much as the model",
+        "stories": [
+          "customer-happiness",
+          "term-deposit-calling-model",
+          "candidate-ranking"
+        ]
+      },
+      {
+        "role": "Data Analyst",
+        "company": "Coast Capital Savings",
+        "place": "Toronto, Ontario, Canada",
+        "start": "2024-10",
+        "end": "2026-05",
+        "kind": "data",
+        "did": "Analysed over a million member, transaction and loan records a month, built and maintained 15+ Power BI dashboards for leadership, wrote SQL on a Snowflake warehouse, and automated recurring reports, cutting manual work by 45%",
+        "learned": "A dashboard is only useful if leadership trusts the numbers, so reconciliation and data governance come first"
+      },
+      {
+        "role": "Data Analyst",
+        "company": "Bloomberg",
+        "place": "Delhi, India (remote while studying in Canada, 2022–2023)",
+        "start": "2020-11",
+        "end": "2023-12",
+        "kind": "data",
+        "did": "Processed and validated 500K+ daily market data records, wrote SQL for fixed-income and equities reporting, and built Python validation programs that improved data quality assessments by 35%",
+        "learned": "At market scale, small data errors become big ones, so automated validation beats manual checking"
+      },
+      {
+        "role": "Junior Android Developer (Intern)",
+        "company": "Shri Om Infotech",
+        "place": "Ahmedabad, Gujarat, India",
+        "start": "2020-07",
+        "end": "2020-10",
+        "kind": "software",
+        "did": "Internship in Android app development",
+        "learned": "My first step into Android programming: building and delivering an app for a local client"
+      },
+      {
+        "role": "Junior Python Developer (Intern)",
+        "company": "VNurture Technologies",
+        "place": "India (on-site)",
+        "start": "2019-01",
+        "end": "2020-04",
+        "kind": "software",
+        "did": "Built and maintained Python scripts and applications",
+        "learned": "Writing code other people maintain teaches you to keep it simple and readable"
+      }
+    ]
+  },
+  "tracks": {
+    "title": "Chapter 3: What I can do for your team",
+    "luffy": "Hiring for a specific role? Pick one and I'll show you the proof.",
+    "items": [
+      {
+        "id": "ai-engineer",
+        "role": "AI Engineer",
+        "pitch": "Fine-tuning language models, building retrieval systems, and making AI explain itself.",
+        "evidence": [
+          "candidate-ranking",
+          "face-recognition-login"
+        ],
+        "experience": [
+          "Apziva",
+          "Mercor"
+        ],
+        "skills": [
+          "QLoRA fine-tuning",
+          "RAG (FAISS, ChromaDB)",
+          "Hugging Face",
+          "PyTorch",
+          "Prompt engineering",
+          "OpenCV"
+        ],
+        "resume": "TODO: /resumes/ai-engineer.pdf"
+      },
+      {
+        "id": "web",
+        "role": "Web Developer",
+        "pitch": "Interactive, animated, accessible websites, like the one you're on right now.",
+        "evidence": [
+          "portfolio"
+        ],
+        "skills": [
+          "Next.js",
+          "React",
+          "TypeScript",
+          "Tailwind CSS",
+          "Motion",
+          "Vercel"
+        ],
+        "resume": "TODO: /resumes/web-developer.pdf"
+      },
+      {
+        "id": "data-science",
+        "role": "Data Scientist",
+        "pitch": "From messy data to models people can trust, with honest evaluation and clear explanations.",
+        "evidence": [
+          "term-deposit-calling-model",
+          "customer-happiness",
+          "h1n1-seasonal-prediction",
+          "spaceship-titanic"
+        ],
+        "experience": [
+          "Coast Capital Savings",
+          "Bloomberg",
+          "Apziva"
+        ],
+        "skills": [
+          "Python",
+          "SQL",
+          "scikit-learn",
+          "XGBoost / CatBoost",
+          "Statistics",
+          "Power BI",
+          "Snowflake"
+        ],
+        "resume": "TODO: /resumes/data-scientist.pdf"
+      },
+      {
+        "id": "software",
+        "role": "Software Developer",
+        "pitch": "Complete applications with interfaces, databases, automation and tests.",
+        "evidence": [
+          "secure-portal-pdf-extraction",
+          "face-recognition-login"
+        ],
+        "experience": [
+          "VNurture Technologies",
+          "Shri Om Infotech"
+        ],
+        "skills": [
+          "Python",
+          "Playwright",
+          "Streamlit",
+          "Tkinter",
+          "MySQL",
+          "pytest & CI"
+        ],
+        "resume": "TODO: /resumes/software-developer.pdf"
+      }
+    ],
+    "principles": [
+      {
+        "title": "Understand the data before the model",
+        "proof": "h1n1-seasonal-prediction"
+      },
+      {
+        "title": "Report the honest number",
+        "proof": "customer-happiness"
+      },
+      {
+        "title": "Use only what you'd know at the time",
+        "proof": "term-deposit-calling-model"
+      },
+      {
+        "title": "Run the cheap experiment first",
+        "proof": "candidate-ranking"
+      }
+    ]
+  },
+  "now": {
+    "title": "Chapter 4: What I'm up to now",
+    "luffy": "And here's what's on his desk right now!",
+    "updated": "2026-11",
+    "items": [
+      {
+        "icon": "🧪",
+        "label": "Working",
+        "text": "Evaluating AI model responses against rubric scales as a freelance evaluator with Mercor"
+      },
+      {
+        "icon": "📂",
+        "label": "Client projects",
+        "text": "Building machine learning solutions for real clients as an AI Resident with Apziva",
+        "stories": [
+          "customer-happiness",
+          "term-deposit-calling-model",
+          "candidate-ranking"
+        ]
+      },
+      {
+        "icon": "🔨",
+        "label": "Building",
+        "text": "auto: GitHub currently-working-on badge"
+      },
+      {
+        "icon": "📚",
+        "label": "Learning",
+        "text": "Comparing image models for page-flip detection, tracked with Weights & Biases"
+      },
+      {
+        "icon": "🎯",
+        "label": "Looking for",
+        "text": "AI engineer, web developer, data scientist and software developer roles"
+      }
+    ]
+  },
+  "contact": {
+    "title": "Let's talk",
+    "luffy": "Liked what you saw? Divyesh would love to hear from you!",
+    "linkedin": "https://www.linkedin.com/in/divyesh-bhavsar-aaaa98152",
+    "availability": "Open to AI engineering, web development, data science and software development roles",
+    "email": "divyeshbhavsar567@gmail.com",
+    "resumeNote": "Résumés for each role are on the role cards in Chapter 3"
+  }
+}

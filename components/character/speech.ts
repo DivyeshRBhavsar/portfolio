@@ -24,7 +24,12 @@ export type Placeholders = Partial<
     | 'title'
     | 'days'
     | 'n'
-    | 'total',
+    | 'total'
+    | 'date'
+    | 'table'
+    | 'column'
+    | 'columns'
+    | 'word',
     string
   >
 >;

@@ -56,7 +56,7 @@ export type VisitorRecord = {
   lastVisit: string;
   /** Most recent first. */
   pages: VisitedPage[];
-  /** Set by "Skip to portfolio": the stage starts collapsed, with Mini Luffy docked. */
+  /** Set by "Skip to portfolio": next visits skip the welcome and the typing (stage in its end state). */
   quiet?: boolean;
   /** Per story slug: where "Continue" resumes. */
   stories?: Record<string, StoryProgress>;

@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+const REDUCED = '(prefers-reduced-motion: reduce)';
+
+/**
+ * Fades and slides its content in (300 ms) the first time it scrolls into view. With
+ * reduced motion the content is simply there.
+ */
 export default function Reveal({
   children,
   delay = 0,
@@ -17,6 +23,10 @@ export default function Reveal({
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
+    if (window.matchMedia(REDUCED).matches) {
+      const frame = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(frame);
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -25,7 +35,7 @@ export default function Reveal({
           observer.disconnect();
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0.1 }
     );
 
     observer.observe(node);
@@ -36,8 +46,8 @@ export default function Reveal({
     <div
       ref={ref}
       style={{ transitionDelay: `${delay}ms` }}
-      className={`transition-all duration-700 ease-out ${
-        visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+      className={`transition-[opacity,transform] duration-300 ease-out motion-reduce:transition-none ${
+        visible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 motion-reduce:translate-y-0 motion-reduce:opacity-100'
       } ${className}`}
     >
       {children}

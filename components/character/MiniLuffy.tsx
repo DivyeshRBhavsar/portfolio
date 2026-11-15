@@ -15,24 +15,19 @@ const SLIDE_PX = 112;
 
 /**
  * Luffy's head in a round badge, docked bottom-right at every screen size (the home page
- * gets bottom padding, so it never covers a button). It shows in quiet mode, whenever
- * the stage is scrolled out of view, and while its panel is open; it slides in and out
+ * gets bottom padding, so it never covers a button). It shows whenever the stage is
+ * scrolled out of view, and while its panel is open; it slides in and out
  * (no slide under reduced motion). Tapping it opens the Ask Luffy panel. A tooltip
  * appears once per visit, ~2 s after the badge first shows, for whatever reason.
- *
- * `beforeSetup`: server HTML and first render. CSS decides then (shown only under
- * <html data-stage="quiet">), so quiet-mode visitors see it from the first paint.
  */
 export default function MiniLuffy({
   visible,
-  beforeSetup,
   open,
   onToggle,
   buttonRef,
   reducedMotion,
 }: {
   visible: boolean;
-  beforeSetup: boolean;
   open: boolean;
   onToggle: () => void;
   buttonRef: RefObject<HTMLButtonElement | null>;
@@ -53,14 +48,6 @@ export default function MiniLuffy({
   }, [visible]);
 
   const showTip = visible && tip !== null && !open;
-
-  if (beforeSetup) {
-    return (
-      <div className="mini-luffy fixed bottom-4 right-4 z-50">
-        <Badge buttonRef={buttonRef} open={open} onClick={onToggle} />
-      </div>
-    );
-  }
 
   return (
     <motion.div

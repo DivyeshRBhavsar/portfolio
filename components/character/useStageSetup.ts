@@ -20,7 +20,7 @@ export type StageSetup = {
   sameVisit: boolean;
   session: SessionInfo;
   name: string;
-  /** "Skip to portfolio" was used before: start collapsed, Mini Luffy docked. */
+  /** "Skip to portfolio" was used before: no welcome, the stage starts in its end state. */
   quiet: boolean;
 };
 
@@ -48,11 +48,7 @@ export function useStageSetup(onSetup: (setup: StageSetup) => void): StageSetup 
   useLayoutEffect(() => {
     // Page load: the script already decided (and started its failsafe clock).
     if (document.documentElement.hasAttribute('data-stage')) return;
-    if (readVisitor()?.quiet) {
-      setStageAttr('quiet');
-      return;
-    }
-    const welcome = !readHomeSeen() && !prefersReducedMotion();
+    const welcome = !readVisitor()?.quiet && !readHomeSeen() && !prefersReducedMotion();
     setStageAttr(welcome ? 'welcome' : 'chat');
     if (welcome) armFailsafe();
   }, []);

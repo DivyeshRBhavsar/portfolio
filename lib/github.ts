@@ -65,16 +65,55 @@ type GitHubRepo = {
 
 function githubHeaders(): HeadersInit {
   const headers: Record<string, string> = { Accept: 'application/vnd.github+json' };
-  // Optional, for a higher rate limit. Server-only: no NEXT_PUBLIC_ prefix, so it's
-  // never sent to the browser.
-  const token = process.env.GITHUB_TOKEN;
+  // For the higher rate limit (5,000/hour instead of 60). Server-only: no NEXT_PUBLIC_
+  // prefix, so it's never sent to the browser, and this module only runs on the server
+  // (components import its types only).
+  const token = process.env.GITHUB_TOKEN?.trim();
   if (token) headers.Authorization = `Bearer ${token}`;
   return headers;
 }
 
 // Revalidate periodically instead of on every request so pages stay fast and stay
-// under GitHub's unauthenticated rate limit.
+// under GitHub's rate limit. Next.js only caches successful (200) responses.
 const CACHE = { revalidate: 3600 };
+
+/** A GitHub request that failed: status 0 = network error. */
+export class GitHubError extends Error {
+  constructor(
+    public status: number,
+    public endpoint: string
+  ) {
+    super(`GitHub ${endpoint} failed (${status || 'network error'})`);
+  }
+}
+
+/** True while `next build` generates pages (no earlier good version exists to keep). */
+export function isBuildPhase(): boolean {
+  return process.env.NEXT_PHASE === 'phase-production-build';
+}
+
+/**
+ * GET from GitHub's API. A failure throws (it's never treated as "no repos"), so a
+ * revalidation that fails keeps the last good page. Logs the endpoint, status and whether
+ * a token is configured; never the token. `allow404`: a missing repo returns null.
+ */
+async function githubJson<T>(endpoint: string, { allow404 = false } = {}): Promise<T | null> {
+  let res: Response;
+  try {
+    res = await fetch(`https://api.github.com${endpoint}`, { headers: githubHeaders(), next: CACHE, redirect: 'follow' });
+  } catch {
+    console.error(`[github] ${endpoint}: network error`);
+    throw new GitHubError(0, endpoint);
+  }
+  if (res.status === 404 && allow404) return null;
+  if (!res.ok) {
+    const limited = res.headers.get('x-ratelimit-remaining') === '0';
+    const token = process.env.GITHUB_TOKEN?.trim() ? 'token set' : 'no GITHUB_TOKEN';
+    console.error(`[github] ${endpoint}: HTTP ${res.status}${limited ? ' (rate limit reached)' : ''} [${token}]`);
+    throw new GitHubError(res.status, endpoint);
+  }
+  return (await res.json()) as T;
+}
 
 function featuredIndex(name: string): number {
   return FEATURED_ORDER.findIndex((featured) => sameRepoName(featured, name));
@@ -85,18 +124,8 @@ function featuredIndex(name: string): number {
  * FEATURED_ORDER, then most recently updated.
  */
 export async function getRepos(): Promise<Repo[]> {
-  const res = await fetch(
-    `https://api.github.com/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`,
-    { headers: githubHeaders(), next: CACHE }
-  );
-
-  if (!res.ok) {
-    // Fail soft: an empty list is better than a broken projects page if GitHub
-    // is rate-limiting or temporarily unavailable.
-    return [];
-  }
-
-  const data: GitHubRepo[] = await res.json();
+  // Throws if GitHub fails (see githubJson): an empty list would be cached as the page.
+  const data = (await githubJson<GitHubRepo[]>(`/users/${GITHUB_USERNAME}/repos?per_page=100&sort=updated`)) ?? [];
 
   const repos: Repo[] = data
     .filter((r) => !r.fork && !r.private && !r.archived)
@@ -135,26 +164,21 @@ export async function getShowcaseRepos(): Promise<Repo[]> {
 
 /**
  * A repo's current id from its URL's owner/name. GitHub redirects a renamed repo's old
- * name to the new one, so a story written before a rename still finds its repo.
- * null if GitHub can't be reached or the repo doesn't exist.
+ * name to the new one, so a story written before a rename still finds its repo. Callers
+ * look in the repo list first and only ask GitHub for names that aren't in it.
+ * null if the repo doesn't exist; throws if GitHub fails.
  */
 export async function resolveRepoId(owner: string, name: string): Promise<number | null> {
-  try {
-    const res = await fetch(
-      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`,
-      { headers: githubHeaders(), next: CACHE, redirect: 'follow' }
-    );
-    if (!res.ok) return null;
-    const data: { id?: unknown } = await res.json();
-    return typeof data.id === 'number' ? data.id : null;
-  } catch {
-    return null;
-  }
+  const data = await githubJson<{ id?: unknown }>(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}`, {
+    allow404: true,
+  });
+  return data && typeof data.id === 'number' ? data.id : null;
 }
 
 /**
- * The repo for the "Currently working on" badge (same rules as /projects), or null if
- * GitHub fails (the badge is then hidden). Shares the hourly-cached request.
+ * The repo for the "Currently working on" badge (same rules as /projects). Shares the
+ * hourly-cached request. If GitHub fails: during the build, null (the badge is hidden
+ * and the page still builds); afterwards, it throws so the last good page is kept.
  */
 export async function getCurrentRepo(): Promise<CurrentRepo | null> {
   try {
@@ -172,7 +196,8 @@ export async function getCurrentRepo(): Promise<CurrentRepo | null> {
     return repo
       ? { id: repo.id, name: repo.name, htmlUrl: repo.htmlUrl, pushedAt: repo.pushedAt }
       : null;
-  } catch {
-    return null;
+  } catch (error) {
+    if (isBuildPhase()) return null;
+    throw error;
   }
 }

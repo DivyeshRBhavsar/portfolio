@@ -111,12 +111,21 @@ const ORDERED = [...CATEGORIES].sort((a, b) => a.order - b.order);
 
 /** Each repo's categories and main category, by repo id (server side, cached hourly). */
 export async function categorizeRepos(
-  repos: Pick<Repo, 'id' | 'name' | 'topics'>[]
+  repos: Pick<Repo, 'id' | 'name' | 'topics'>[],
+  { offline = false }: { offline?: boolean } = {}
 ): Promise<Record<number, ProjectCategories>> {
-  // Overrides by repo id too: GitHub resolves an old name to the renamed repo.
+  // Overrides by repo id too: GitHub resolves an old name to the renamed repo. Names
+  // found in the repo list need no request; only the others are looked up (none when
+  // `offline`, the fallback when GitHub is down). Throws if a lookup fails.
   const overrideById = new Map<number, CategorySlug>();
   await Promise.all(
     Object.entries(PRIMARY_CATEGORY).map(async ([name, slug]) => {
+      const listed = repos.find((r) => sameRepoName(r.name, name));
+      if (listed) {
+        overrideById.set(listed.id, slug);
+        return;
+      }
+      if (offline) return;
       const id = await resolveRepoId(GITHUB_USERNAME, name);
       if (id !== null) overrideById.set(id, slug);
     })

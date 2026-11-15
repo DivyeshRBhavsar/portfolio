@@ -2,7 +2,7 @@ import HomeStage from '@/components/character/HomeStage';
 import { homeRoleLine } from '@/components/character/luffyLines';
 import LifeStory from '@/components/home/LifeStory';
 import { getAllPosts } from '@/lib/posts';
-import { getCurrentRepo } from '@/lib/github';
+import { getCurrentRepo, getShowcaseRepos } from '@/lib/github';
 import { getLifeStory } from '@/lib/lifeStory';
 import { getStories, storiesByRepoId } from '@/lib/stories';
 
@@ -10,10 +10,13 @@ export default async function HomePage() {
   // The stage's "What's new" chip opens the latest post.
   const latestPost = getAllPosts()[0];
   const latestPostHref = latestPost ? `/blog/${latestPost.slug}` : '/blog';
-  // "Currently working on" (stage badge and Chapter 4); null if GitHub fails. Cached for an hour.
+  // "Currently working on" (stage badge and Chapter 4), cached for an hour. If GitHub fails:
+  // hidden during a build; afterwards the last good page is kept (see lib/github.ts).
   const currentRepo = await getCurrentRepo();
+  // Matched against the whole (already fetched, cached) repo list, so stories are found
+  // by name without extra GitHub requests.
   const currentStory = currentRepo
-    ? ((await storiesByRepoId(getStories(), [currentRepo]))[currentRepo.id] ?? null)
+    ? ((await storiesByRepoId(getStories(), await getShowcaseRepos()))[currentRepo.id] ?? null)
     : null;
   const story = getLifeStory();
 

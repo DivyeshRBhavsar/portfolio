@@ -1,6 +1,7 @@
 import { allCategories, categorizeRepos, type ProjectCategories } from '@/lib/categories';
-import { getShowcaseRepos } from '@/lib/github';
-import { getStories, storiesByRepoId } from '@/lib/stories';
+import { getShowcaseRepos, isBuildPhase } from '@/lib/github';
+import { getStories, reposFromStories, storiesByRepoId } from '@/lib/stories';
+import type { Story } from '@/lib/storyTypes';
 import { ExternalLink } from 'lucide-react';
 import PageHero from '@/components/PageHero';
 import {
@@ -13,14 +14,34 @@ import {
 import { fill } from '@/components/character/speech';
 import ProjectsView from './ProjectsView';
 
-/** Shared by /projects and /projects/<slug> (server: GitHub and stories, cached hourly). */
-export default async function ProjectsPage() {
-  const repos = await getShowcaseRepos();
-  const stories = getStories();
+/** GitHub's repos with their stories and categories; `offline` = story files only, no requests. */
+async function loadProjects(stories: Story[], offline: boolean) {
+  const repos = offline ? reposFromStories(stories) : await getShowcaseRepos();
   const [storyByRepoId, repoCategories] = await Promise.all([
-    storiesByRepoId(stories, repos),
-    categorizeRepos(repos),
+    storiesByRepoId(stories, repos, { offline }),
+    categorizeRepos(repos, { offline }),
   ]);
+  return { repos, storyByRepoId, repoCategories };
+}
+
+/**
+ * Shared by /projects and /projects/<slug> (server: GitHub and stories, cached hourly).
+ * If GitHub fails after the first build, the error is thrown so Next.js keeps serving
+ * the last good page. During a build there's no earlier page to keep, so the projects
+ * with story files are shown instead (the list is never empty); the next hourly refresh
+ * replaces them once GitHub answers.
+ */
+export default async function ProjectsPage() {
+  const stories = getStories();
+  let loaded: Awaited<ReturnType<typeof loadProjects>>;
+  try {
+    loaded = await loadProjects(stories, false);
+  } catch (error) {
+    if (!isBuildPhase()) throw error;
+    console.warn('[github] unavailable during the build: /projects shows the projects with story files for now');
+    loaded = await loadProjects(stories, true);
+  }
+  const { repos, storyByRepoId, repoCategories } = loaded;
   // Stories inherit their repo's categories ("Other projects" if the repo isn't found).
   const storyCategories: Record<string, ProjectCategories> = {};
   for (const [repoId, summary] of Object.entries(storyByRepoId)) {

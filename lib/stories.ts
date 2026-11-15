@@ -12,6 +12,7 @@ import type {
   StoryLink,
   StorySummary,
 } from './storyTypes';
+import { usableUrl } from './storyTypes';
 
 /**
  * Project stories: one JSON file per story in content/project_stories/. Read and checked
@@ -274,28 +275,54 @@ export function parseRepoUrl(url: string): { owner: string; name: string } | nul
 }
 
 /**
- * Which repo each story belongs to, as { repoId: story }. Matched by the repo's id
- * (GitHub resolves an old name to the renamed repo); if GitHub can't be reached, by
- * owner/name ignoring case.
+ * Which repo each story belongs to, as { repoId: story }. Matched by owner/name in the
+ * repo list first (no request); only a story whose repo isn't in the list (e.g. it was
+ * renamed: GitHub resolves the old name to the new repo) asks GitHub for its id.
+ * `offline`: list matches only, no requests (the fallback when GitHub is down).
+ * Throws if a GitHub request fails.
  */
 export async function storiesByRepoId(
   stories: Story[],
-  repos: Pick<Repo, 'id' | 'name'>[]
+  repos: Pick<Repo, 'id' | 'name'>[],
+  { offline = false }: { offline?: boolean } = {}
 ): Promise<Record<number, StorySummary>> {
   const result: Record<number, StorySummary> = {};
   await Promise.all(
     stories.map(async (story) => {
       const parsed = parseRepoUrl(story.repo);
       if (!parsed) return;
-      const id = await resolveRepoId(parsed.owner, parsed.name);
-      const byId = id !== null ? repos.find((r) => r.id === id) : undefined;
-      const byName =
+      let repo =
         parsed.owner.toLowerCase() === GITHUB_USERNAME.toLowerCase()
           ? repos.find((r) => sameRepoName(r.name, parsed.name))
           : undefined;
-      const repo = byId ?? byName;
+      if (!repo && !offline) {
+        const id = await resolveRepoId(parsed.owner, parsed.name);
+        repo = id !== null ? repos.find((r) => r.id === id) : undefined;
+      }
       if (repo && !result[repo.id]) result[repo.id] = summarize(story);
     })
   );
   return result;
+}
+
+/**
+ * Stand-in project cards from the story files, for a build where GitHub can't be reached
+ * (so /projects is never empty). Negative ids never clash with GitHub's.
+ */
+export function reposFromStories(stories: Story[]): Repo[] {
+  return stories.map((story, i) => {
+    const parsed = parseRepoUrl(story.repo);
+    return {
+      id: -(i + 1),
+      name: parsed?.name ?? story.slug,
+      description: story.hook,
+      htmlUrl: usableUrl(story.repo) ? story.repo : `https://github.com/${GITHUB_USERNAME}`,
+      homepage: null,
+      language: null,
+      topics: [],
+      stars: 0,
+      updatedAt: '',
+      pushedAt: '',
+    };
+  });
 }

@@ -173,7 +173,7 @@ function ProjectCard({
   return (
     <div className="rounded-xl border-2 border-ink/10 bg-surface p-5 flex flex-col hover:border-ink hover:shadow-sticker transition-all">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-display font-semibold text-ink">
+        <h3 className="min-w-0 break-words font-display font-semibold text-ink">
           {story ? <StoryText text={story.title} /> : repo.name}
         </h3>
         {repo.stars > 0 && (
@@ -182,7 +182,7 @@ function ProjectCard({
           </span>
         )}
       </div>
-      <p className="mt-2 text-sm text-ink-muted flex-1">
+      <p className="mt-2 text-sm text-ink-muted flex-1 max-sm:text-[15px]">
         {story ? (
           <StoryText text={story.hook} />
         ) : (

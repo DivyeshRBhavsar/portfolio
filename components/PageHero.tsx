@@ -31,7 +31,7 @@ const SIZE = {
   bubble: 'max-w-xl px-4 py-2.5 text-sm sm:text-base max-sm:px-3 max-sm:py-1.5',
   bubbleText: 'max-sm:max-h-10 max-sm:overflow-hidden',
   extras:
-    'mt-3 flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-3 text-sm text-ink-muted sm:mt-8 chip-row max-sm:min-h-10 max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:whitespace-nowrap max-sm:text-xs max-sm:[&>*]:shrink-0 max-sm:[&_p[id]]:whitespace-normal',
+    'mt-3 flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-3 text-sm text-ink-muted sm:mt-8 chip-row max-sm:relative max-sm:min-h-10 max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:whitespace-nowrap max-sm:text-xs max-sm:[&>*]:shrink-0 max-sm:[&_p[id]]:whitespace-normal',
 };
 
 export default function PageHero({

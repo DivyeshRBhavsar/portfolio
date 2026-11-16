@@ -42,7 +42,9 @@ export default function CategoryChips({
     <div
       role="group"
       aria-label={categoryChipsLabel[kind]}
-      className={`flex flex-wrap gap-2 ${oneRowOnPhones ? 'chip-row max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:px-2.5 max-sm:py-0.5' : ''}`}
+      // relative: the chips' screen-reader counts (sr-only = position: absolute) must stay
+      // inside the sideways-scrolling row; without it they escape and widen the whole page.
+      className={`relative flex flex-wrap gap-2 ${oneRowOnPhones ? 'chip-row max-sm:flex-nowrap max-sm:overflow-x-auto max-sm:px-2.5 max-sm:py-0.5' : ''}`}
     >
       {chips.map((chip) => {
         const pressed = chip.slug === selected;
